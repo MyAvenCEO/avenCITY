@@ -23,13 +23,21 @@
 	<img
 		src={cityDome}
 		alt="Maia City — a geodesic glass dome set in jungle above a turquoise paradise"
-		class="absolute inset-0 -z-20 h-full w-full object-cover object-[38%_center]"
+		class="absolute inset-0 -z-20 h-full w-full transform-gpu object-cover object-[38%_center]"
 		fetchpriority="high"
 	/>
 	<div
-		class="absolute inset-0 -z-10 bg-gradient-to-tr from-deep/95 via-deep/45 to-transparent"
+		class="absolute inset-0 -z-10 bg-gradient-to-tr from-deep/80 via-deep/25 to-transparent"
 	></div>
-	<div class="absolute inset-0 -z-10 bg-gradient-to-t from-deep/75 to-transparent"></div>
+	<div class="absolute inset-0 -z-10 bg-gradient-to-t from-deep/60 to-transparent"></div>
+	<!-- Targeted bands, not a heavier global scrim. The nav and the sponsor line
+	     are the only text without a glass pane behind them, and the diagonal
+	     above clears to nothing exactly where the nav sits (top right, over
+	     bright sky). These two strips buy those bands their contrast back while
+	     leaving the middle of the render untouched. -->
+	<div
+		class="absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-deep/55 to-transparent"
+	></div>
 
 	<!-- Nav -->
 	<header class="relative flex items-center justify-between gap-4 px-6 py-6 md:px-12">

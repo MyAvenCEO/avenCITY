@@ -91,7 +91,13 @@
 		aria-hidden="true"
 		class="fixed inset-0 -z-20 h-full w-full transform-gpu object-cover will-change-transform"
 	/>
-	<div class="fixed inset-0 -z-10 transform-gpu bg-deep/80"></div>
+	<div class="fixed inset-0 -z-10 transform-gpu bg-deep/60"></div>
+	<!-- The header and intro are the only copy on this page without a glass pane
+	     behind them, and they land on the sunlit dome. A graded top band gives
+	     them contrast without darkening the render everywhere else. -->
+	<div
+		class="fixed inset-x-0 top-0 -z-10 h-[28rem] transform-gpu bg-gradient-to-b from-deep/75 via-deep/40 to-transparent"
+	></div>
 
 	<div class="mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-24">
 		<header class="flex flex-wrap items-center justify-between gap-4">

@@ -9,13 +9,16 @@
 	several smaller panes, so the village keeps showing between them.
 -->
 <section id="story" class="relative isolate overflow-hidden py-24 md:py-32">
+	<!-- `transform-gpu` is NOT cosmetic: without its own compositing layer,
+	     Chromium drops the text inside the backdrop-filter panes below while
+	     they scroll over this backdrop, leaving empty glass boxes. -->
 	<img
 		src={cityVillage}
 		alt="Maia City from above — geodesic domes threaded by a turquoise river"
-		class="absolute inset-0 -z-20 h-full w-full object-cover"
+		class="absolute inset-0 -z-20 h-full w-full transform-gpu object-cover"
 		loading="lazy"
 	/>
-	<div class="absolute inset-0 -z-10 bg-deep/65"></div>
+	<div class="absolute inset-0 -z-10 transform-gpu bg-deep/45"></div>
 
 	<div class="mx-auto max-w-5xl px-6 md:px-12">
 		<p class="label text-paradise-bright">Day {mission.day} of {mission.totalDays}</p>
