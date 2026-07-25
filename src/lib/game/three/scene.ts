@@ -71,7 +71,7 @@ function makeSelectionRing(): THREE.Mesh {
 
 export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {}): SceneApi {
 	const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -79,33 +79,33 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(SKY);
-	scene.fog = new THREE.Fog(SKY, 80, 160);
+	scene.fog = new THREE.Fog(SKY, 160, 340);
 
 	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 600);
-	camera.position.set(34, 34, 46);
+	camera.position.set(48, 46, 64);
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.08;
 	controls.minDistance = 8;
-	controls.maxDistance = 140;
+	controls.maxDistance = 190;
 	controls.maxPolarAngle = Math.PI * 0.46;
 
 	scene.add(new THREE.HemisphereLight('#eaf6ff', '#d8c9a8', 0.95));
 	const sun = new THREE.DirectionalLight('#fff2dd', 2.1);
-	sun.position.set(44, 60, 26);
+	sun.position.set(60, 84, 36);
 	sun.castShadow = true;
 	sun.shadow.mapSize.set(4096, 4096);
-	sun.shadow.camera.left = -60;
-	sun.shadow.camera.right = 60;
-	sun.shadow.camera.top = 60;
-	sun.shadow.camera.bottom = -60;
-	sun.shadow.camera.far = 180;
+	sun.shadow.camera.left = -90;
+	sun.shadow.camera.right = 90;
+	sun.shadow.camera.top = 90;
+	sun.shadow.camera.bottom = -90;
+	sun.shadow.camera.far = 280;
 	sun.shadow.bias = -0.0004;
 	scene.add(sun);
 
 	// the living sea (Gerstner waves + shore foam, see water.ts)
-	const water = createWater(460, WATER_LEVEL);
+	const water = createWater(560, WATER_LEVEL);
 	(water.mesh.material as THREE.ShaderMaterial).uniforms.uSunDir.value
 		.copy(sun.position)
 		.normalize();
@@ -184,6 +184,9 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 			camera.updateProjectionMatrix();
 		}
 	}
+
+	// dev diagnostics handle (harmless in prod; enables live inspection)
+	(window as unknown as Record<string, unknown>).__scene = { renderer, scene, camera, water, sun };
 
 	const clock = new THREE.Clock();
 	let raf = 0;

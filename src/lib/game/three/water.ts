@@ -119,7 +119,7 @@ const DETAIL_NORMAL = /* glsl */ `
     float amp = 1.0;
     mat2 m = mat2(1.7, 1.1, -1.1, 1.7);
     vec2 flow = uWindDir * t * 0.6;
-    for (int i = 0; i < 5; i++){
+    for (int i = 0; i < 4; i++){
       vec3 n = noised(p + flow);
       g += amp * n.yz;
       p = m * p;
@@ -145,7 +145,7 @@ function bakeCoastField(
 	tiles: HexTile[],
 	offsetX: number,
 	offsetZ: number
-): { data: Float32Array; minX: number; minZ: number; sizeX: number; sizeZ: number } {
+): { data: Uint8Array; minX: number; minZ: number; sizeX: number; sizeZ: number } {
 	const land = tiles.filter((t) => t.kind === 'LAND');
 	let minX = Infinity;
 	let maxX = -Infinity;
@@ -169,7 +169,7 @@ function bakeCoastField(
 
 	const xs = land.map((t) => t.x + offsetX);
 	const zs = land.map((t) => t.z + offsetZ);
-	const data = new Float32Array(COAST_RES * COAST_RES);
+	const data = new Uint8Array(COAST_RES * COAST_RES);
 	for (let iy = 0; iy < COAST_RES; iy++) {
 		const wz = minZ + ((iy + 0.5) / COAST_RES) * sizeZ;
 		for (let ix = 0; ix < COAST_RES; ix++) {
@@ -182,7 +182,7 @@ function bakeCoastField(
 				if (d2 < dmin) dmin = d2;
 			}
 			const d = Math.max(0, Math.sqrt(dmin) - 0.92);
-			data[iy * COAST_RES + ix] = Math.min(d, COAST_RANGE) / COAST_RANGE;
+			data[iy * COAST_RES + ix] = Math.round((Math.min(d, COAST_RANGE) / COAST_RANGE) * 255);
 		}
 	}
 	return { data, minX, minZ, sizeX, sizeZ };
@@ -221,6 +221,7 @@ export function createWater(planeSize: number, surfaceY: number): WaterApi {
 
 	const material = new THREE.ShaderMaterial({
 		uniforms,
+		transparent: true,
 		vertexShader: /* glsl */ `
 			precision highp float;
 			${NOISE}
@@ -290,9 +291,7 @@ export function createWater(planeSize: number, surfaceY: number): WaterApi {
 				vec3 N = normalize(vNormal);
 				float detFade = exp(-dist * 0.02);
 				vec3 dN1 = detailNormal(vWorldPos.xz * uDetailScale, uTime, 1.0);
-				vec3 dN2 = detailNormal(vWorldPos.xz * uDetailScale * 3.3 + 11.0, uTime * 1.35, 1.0);
-				vec2 dsum = dN1.xz * uDetailStrength
-				          + dN2.xz * uDetailStrength * 0.5 * mix(0.3, 1.0, detFade);
+				vec2 dsum = dN1.xz * uDetailStrength * mix(0.5, 1.0, detFade);
 				N = normalize(vec3(N.x + dsum.x, N.y, N.z + dsum.y));
 
 				// depth proxy from the coast field: shallow turquoise near land,
@@ -315,7 +314,7 @@ export function createWater(planeSize: number, surfaceY: number): WaterApi {
 
 				// ---- foam: shoreline band + breaking folds, layered dissolve ----
 				float shore = smoothstep(uShoreFoamWidth, 0.06, shoreD);
-				float sTex = fbm(vWorldPos.xz * 1.4 - uWindDir * uTime * 0.5, 4);
+				float sTex = fbm(vWorldPos.xz * 1.4 - uWindDir * uTime * 0.5, 3);
 				float shoreFoam = shore * smoothstep(0.18, 0.5, sTex);
 				// pulsing lap: a slow wave of foam rolling onto the shore
 				float lap = 0.5 + 0.5 * sin(uTime * 1.1 - shoreD * 3.2);
@@ -326,14 +325,14 @@ export function createWater(planeSize: number, surfaceY: number): WaterApi {
 
 				vec2 fp = vWorldPos.xz;
 				vec2 flow = uWindDir * uTime * 0.35;
-				float tCoarse = fbm(fp * 0.5 + flow, 4);
-				float tFine   = fbm(fp * 2.1 - flow, 3);
+				float tCoarse = fbm(fp * 0.5 + flow, 3);
+				float tFine   = fbm(fp * 2.1 - flow, 2);
 				float tex = tCoarse * 0.62 + tFine * 0.38;
 				float thr  = 1.0 - clamp(energy, 0.0, 1.0);
 				float foam = smoothstep(thr - uFoamEdge, thr + uFoamEdge, tex);
 				foam *= smoothstep(0.0, 0.12, energy);
 
-				float bubbles = 0.8 + 0.28 * fbm(fp * 4.0 - flow, 3);
+				float bubbles = 0.8 + 0.28 * fbm(fp * 4.0 - flow, 2);
 				vec3 foamCol = uFoamColor * bubbles * (0.7 + 0.35 * max(dot(N, sunDir), 0.0));
 				color = mix(color, foamCol, clamp(foam, 0.0, 1.0) * 0.92);
 
@@ -341,12 +340,19 @@ export function createWater(planeSize: number, surfaceY: number): WaterApi {
 				float fogAmt = 1.0 - exp(-dist * 0.012);
 				color = mix(color, uSkyColor, clamp(fogAmt, 0.0, 1.0));
 
-				gl_FragColor = vec4(color, 1.0);
+				// translucent shallows: the sandy beach skirts show through the
+				// water near shore, then the sea turns opaque seaward. Foam and
+				// distance stay solid.
+				float alpha = mix(0.42, 1.0, smoothstep(0.1, 2.4, shoreD));
+				alpha = max(alpha, foam * 0.95);
+				alpha = max(alpha, clamp(fogAmt * 1.5, 0.0, 1.0));
+
+				gl_FragColor = vec4(color, alpha);
 			}
 		`
 	});
 
-	const segments = 320;
+	const segments = 192;
 	const geo = new THREE.PlaneGeometry(planeSize, planeSize, segments, segments);
 	geo.rotateX(-Math.PI / 2);
 	const mesh = new THREE.Mesh(geo, material);
@@ -366,7 +372,7 @@ export function createWater(planeSize: number, surfaceY: number): WaterApi {
 				COAST_RES,
 				COAST_RES,
 				THREE.RedFormat,
-				THREE.FloatType
+				THREE.UnsignedByteType
 			);
 			tex.magFilter = THREE.LinearFilter;
 			tex.minFilter = THREE.LinearFilter;

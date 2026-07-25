@@ -7,12 +7,20 @@
  * with the neighbouring tiles' colors (inverse-distance weighting), so
  * terrain melts across hex borders instead of stopping at them. Water
  * contributes "wetness" to the same field, and a sandy shore band emerges
- * automatically wherever wetness crosses ~50% — shorelines flow around the
- * lake and along the entire coast, ignoring tile boundaries.
+ * automatically wherever wetness crosses ~50%.
+ *
+ * COASTS ARE BEACHES, NOT CLIFFS: every sea-facing hex edge grows a sloping
+ * sand skirt from the tile rim down under the waterline, so the island eases
+ * into the (semi-transparent, shallow) water instead of ending in a cut
+ * hexagon wall.
+ *
+ * PERFORMANCE: everything a tile owns — base prism, top disc, coast skirt,
+ * all decorations — is merged into ONE vertex-colored mesh per tile. At
+ * 1440 land tiles that is the difference between ~1.5k draw calls and ~40k.
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { AXIAL_DIRS, key, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
+import { AXIAL_DIRS, key, WATER_BIOME, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
 import { makeRng, type Rng } from '../rng';
 import { blobTree, bush, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
 
@@ -21,9 +29,11 @@ const HEX_HEIGHT = 0.5; // uniform — the board is flat
 const BEVEL = 0.042; // soft crease between tiles
 const CLAY_SIDE = '#f5edda';
 const SHORE = '#ecdcae';
+const WET_SAND = '#dcc79b';
+const SUBMERGED = '#a9c9bd';
 /** The open water tone. SEA tiles are never rendered as hexes — they exist
- * only as data so the coastal shore band computes; the visible sea is one
- * unified plane in scene.ts using this same darker shade. */
+ * only as data so the coastal shore band computes; the visible sea is the
+ * simulated water plane in water.ts. */
 const SEA_TOP = '#5fa9bc';
 
 interface BiomeSpec {
@@ -34,10 +44,15 @@ interface BiomeSpec {
 }
 
 const BIOMES: Record<BiomeId, BiomeSpec> = {
-	MEADOW: {
-		top: '#9fd67f',
-		density: [3, 7],
-		deco: (rng) => (rng.chance(0.2) ? flower(rng) : rng.chance(0.12) ? blobTree(rng) : tuft(rng))
+	LAKE: {
+		top: '#54c6dc',
+		density: [0, 2],
+		deco: (rng) => pebble(rng)
+	},
+	CLAYPIT: {
+		top: '#d9a983',
+		density: [1, 3],
+		deco: (rng) => (rng.chance(0.6) ? pebble(rng) : rock(rng, 0.9))
 	},
 	FOREST: {
 		top: '#77bd62',
@@ -45,20 +60,40 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 		deco: (rng) =>
 			rng.chance(0.35) ? bush(rng) : rng.chance(0.55) ? pine(rng) : blobTree(rng)
 	},
+	GROVE: {
+		top: '#8ecb84',
+		density: [5, 9],
+		deco: (rng) => (rng.chance(0.45) ? bush(rng) : rng.chance(0.5) ? flower(rng) : blobTree(rng))
+	},
 	MOUNTAIN: {
 		top: '#b3ac9f',
 		density: [1, 2],
 		deco: (rng) => (rng.chance(0.7) ? peak(rng) : rock(rng, 1.4))
+	},
+	ORECLIFF: {
+		top: '#9c9184',
+		density: [2, 4],
+		deco: (rng) => (rng.chance(0.5) ? rock(rng, 1.2) : peak(rng))
+	},
+	MEADOW: {
+		top: '#a8da85',
+		density: [3, 7],
+		deco: (rng) => (rng.chance(0.2) ? flower(rng) : rng.chance(0.12) ? blobTree(rng) : tuft(rng))
+	},
+	FIBERFIELD: {
+		top: '#c9d789',
+		density: [6, 11],
+		deco: (rng) => (rng.chance(0.8) ? tuft(rng) : flower(rng))
 	},
 	DUNES: {
 		top: '#f0d99e',
 		density: [1, 3],
 		deco: (rng) => (rng.chance(0.45) ? puffTree(rng) : rng.chance(0.5) ? cactus(rng) : pebble(rng))
 	},
-	RIVER: {
-		top: '#54c6dc',
+	SUNPLAINS: {
+		top: '#f2e2a4',
 		density: [0, 2],
-		deco: (rng) => pebble(rng)
+		deco: (rng) => (rng.chance(0.6) ? pebble(rng) : flower(rng))
 	}
 };
 
@@ -146,8 +181,8 @@ function buildStyles(world: HexWorld): Map<string, TileStyle> {
 			tile,
 			colorA: driftedColor(BIOMES[a].top, rng),
 			colorB: driftedColor(BIOMES[b].top, rng),
-			waterA: a === 'RIVER' ? 1 : 0,
-			waterB: b === 'RIVER' ? 1 : 0,
+			waterA: a === WATER_BIOME ? 1 : 0,
+			waterB: b === WATER_BIOME ? 1 : 0,
 			dirX: Math.cos(tile.splitDir),
 			dirZ: Math.sin(tile.splitDir)
 		});
@@ -192,17 +227,50 @@ function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Colo
 }
 
 /* ---------------------------------------------------------------------------
- * Meshes
+ * Geometry builders — everything returns world-space, vertex-colored,
+ * non-indexed BufferGeometry with position/normal/color, ready to merge.
  * ------------------------------------------------------------------------ */
 
 type FieldSampler = ReturnType<typeof makeFieldSampler>;
 
+function setUniformColor(geo: THREE.BufferGeometry, colorOf: (x: number, y: number, z: number) => THREE.Color): void {
+	const pos = geo.getAttribute('position');
+	const arr = new Float32Array(pos.count * 3);
+	for (let i = 0; i < pos.count; i++) {
+		const c = colorOf(pos.getX(i), pos.getY(i), pos.getZ(i));
+		arr[i * 3] = c.r;
+		arr[i * 3 + 1] = c.g;
+		arr[i * 3 + 2] = c.b;
+	}
+	geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+}
+
+/** The tile prism: bevel + top wear the field color (darkened toward the rim
+ * so borders read as pressed furrows); walls stay clay. */
+function buildBaseGeo(tile: HexTile, rng: Rng, field: FieldSampler): THREE.BufferGeometry {
+	const geo = hexPrism(HEX_RADIUS, HEX_HEIGHT).toNonIndexed();
+	geo.deleteAttribute('uv');
+	const sideColor = driftedColor(CLAY_SIDE, rng);
+	const scratch = new THREE.Color();
+	const bevelBottom = HEX_HEIGHT - BEVEL;
+	setUniformColor(geo, (x, y, z) => {
+		if (y > bevelBottom - 0.001) {
+			const t = Math.min(1, Math.max(0, (y - bevelBottom) / BEVEL));
+			field(tile, tile.x + x, tile.z + z, scratch);
+			scratch.multiplyScalar(0.955 + 0.04 * t);
+			if (t < 0.3) scratch.lerp(sideColor, 1 - t / 0.3);
+			return scratch;
+		}
+		return sideColor;
+	});
+	geo.translate(tile.x, 0, tile.z);
+	return geo;
+}
+
 /** Finely tessellated top disc, vertex-colored by the cross-tile field. */
-function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh {
-	// meet the bevel exactly — the disc covers the flat top, the colored
-	// bevel carries the terrain over the edge
+function buildTopDiscGeo(tile: HexTile, rng: Rng, field: FieldSampler): THREE.BufferGeometry {
 	const radius = HEX_RADIUS - BEVEL + 0.005;
-	const N = 8; // subdivisions per sector edge
+	const N = 6; // subdivisions per sector edge
 	const positions: number[] = [];
 	const colors: number[] = [];
 	const scratch = new THREE.Color();
@@ -213,9 +281,7 @@ function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh 
 	];
 
 	const pushTri = (a: [number, number], b: [number, number], c: [number, number]): void => {
-		// per-triangle micro lightness jitter: the hand-glazed clay patchiness
 		const dl = rng.jitter(0, 0.004);
-		// counter-clockwise in xz so normals face +Y
 		for (const [px, pz] of [a, c, b]) {
 			positions.push(px, 0, pz);
 			field(tile, tile.x + px, tile.z + pz, scratch);
@@ -244,64 +310,185 @@ function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh 
 	geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
 	geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 	geo.computeVertexNormals();
-
-	const isWet = tile.biomes.includes('RIVER');
-	const mesh = new THREE.Mesh(
-		geo,
-		new THREE.MeshStandardMaterial({
-			vertexColors: true,
-			roughness: isWet ? 0.5 : 0.88,
-			metalness: 0
-		})
-	);
-	mesh.position.y = HEX_HEIGHT + 0.004;
-	mesh.receiveShadow = true;
-	return mesh;
+	geo.translate(tile.x, HEX_HEIGHT + 0.004, tile.z);
+	return geo;
 }
+
+/* --- the beach skirt ------------------------------------------------------ */
+
+/** Edge k runs corner k -> corner k+1; its outward neighbour is EDGE_DIRS[k]
+ * (world angle 30° + 60°·k in the flat-top axial layout). */
+const EDGE_DIRS: ReadonlyArray<[number, number]> = [
+	[1, 0],
+	[0, 1],
+	[-1, 1],
+	[-1, 0],
+	[0, -1],
+	[1, -1]
+];
+
+/** Skirt profile: from the prism rim, ease outward and down under the water.
+ * offsets are along the edge normal; heights are absolute Y. */
+const SKIRT_RINGS = [
+	{ out: 0, y: HEX_HEIGHT - BEVEL },
+	{ out: 0.3, y: 0.38 },
+	{ out: 0.7, y: 0.26 },
+	{ out: 1.25, y: 0.1 }
+];
 
 /**
- * Merge a tile's decoration groups into ONE mesh (material colors baked into
- * vertex colors). At 360 land tiles with dense forests this is the difference
- * between ~1k draw calls and ~10k.
+ * Sloping sand apron on every sea-facing edge (plus rounded corner fans
+ * where two sea edges meet) — the island eases into the water as a beach
+ * instead of ending in a cut hexagon wall.
  */
-function mergeDecoGroups(decos: THREE.Group[]): THREE.Mesh | null {
-	const geos: THREE.BufferGeometry[] = [];
-	for (const g of decos) {
-		g.updateMatrixWorld(true);
-		g.traverse((obj) => {
-			if (obj instanceof THREE.Mesh) {
-				const geo = (obj.geometry as THREE.BufferGeometry).clone().toNonIndexed();
-				geo.applyMatrix4(obj.matrixWorld);
-				geo.deleteAttribute('uv');
-				const count = geo.getAttribute('position').count;
-				const col = (obj.material as THREE.MeshStandardMaterial).color;
-				const arr = new Float32Array(count * 3);
-				for (let i = 0; i < count; i++) {
-					arr[i * 3] = col.r;
-					arr[i * 3 + 1] = col.g;
-					arr[i * 3 + 2] = col.b;
-				}
-				geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
-				geos.push(geo);
-				obj.geometry.dispose();
-				(obj.material as THREE.Material).dispose();
+function buildSkirtGeo(
+	tile: HexTile,
+	rng: Rng,
+	field: FieldSampler,
+	isSea: (q: number, r: number) => boolean
+): THREE.BufferGeometry | null {
+	const seaEdge = EDGE_DIRS.map(([dq, dr]) => isSea(tile.q + dq, tile.r + dr));
+	if (!seaEdge.some(Boolean)) return null;
+
+	const positions: number[] = [];
+	const colors: number[] = [];
+	const scratch = new THREE.Color();
+	const wetSand = driftedColor(WET_SAND, rng);
+	const submerged = driftedColor(SUBMERGED, rng);
+
+	const ringColor = (ringIdx: number, wx: number, wz: number): THREE.Color => {
+		if (ringIdx === 0) {
+			field(tile, wx, wz, scratch);
+			return scratch.clone().multiplyScalar(0.97);
+		}
+		if (ringIdx === 1) {
+			field(tile, wx, wz, scratch);
+			return scratch.clone().lerp(wetSand, 0.75).multiplyScalar(0.97);
+		}
+		if (ringIdx === 2) return wetSand.clone().lerp(submerged, 0.45);
+		return submerged.clone();
+	};
+
+	const pushQuad = (
+		a: THREE.Vector3,
+		b: THREE.Vector3,
+		c: THREE.Vector3,
+		d: THREE.Vector3,
+		ca: THREE.Color,
+		cb: THREE.Color,
+		cc: THREE.Color,
+		cd: THREE.Color
+	): void => {
+		// two triangles: a-b-c, a-c-d (wound upward/outward)
+		for (const [p, col] of [
+			[a, ca],
+			[b, cb],
+			[c, cc],
+			[a, ca],
+			[c, cc],
+			[d, cd]
+		] as const) {
+			positions.push(p.x, p.y, p.z);
+			colors.push(col.r, col.g, col.b);
+		}
+	};
+
+	const corner = (i: number): THREE.Vector2 =>
+		new THREE.Vector2(
+			tile.x + Math.cos((Math.PI / 3) * i) * HEX_RADIUS,
+			tile.z + Math.sin((Math.PI / 3) * i) * HEX_RADIUS
+		);
+
+	const SEGS = 3;
+	for (let k = 0; k < 6; k++) {
+		if (!seaEdge[k]) continue;
+		const A = corner(k);
+		const B = corner(k + 1);
+		const normalAngle = Math.PI / 6 + (Math.PI / 3) * k;
+		const nx = Math.cos(normalAngle);
+		const nz = Math.sin(normalAngle);
+
+		for (let s = 0; s < SEGS; s++) {
+			const t0 = s / SEGS;
+			const t1 = (s + 1) / SEGS;
+			for (let r = 0; r < SKIRT_RINGS.length - 1; r++) {
+				const R0 = SKIRT_RINGS[r];
+				const R1 = SKIRT_RINGS[r + 1];
+				const wobble = 1 + rng.jitter(0, 0.06);
+				const p = (t: number, ring: typeof R0): THREE.Vector3 =>
+					new THREE.Vector3(
+						A.x + (B.x - A.x) * t + nx * ring.out * wobble,
+						ring.y,
+						A.y + (B.y - A.y) * t + nz * ring.out * wobble
+					);
+				const a = p(t0, R0);
+				const b = p(t1, R0);
+				const c = p(t1, R1);
+				const d = p(t0, R1);
+				pushQuad(
+					a,
+					b,
+					c,
+					d,
+					ringColor(r, a.x, a.z),
+					ringColor(r, b.x, b.z),
+					ringColor(r + 1, c.x, c.z),
+					ringColor(r + 1, d.x, d.z)
+				);
 			}
-		});
+		}
+
+		// rounded corner fan where the NEXT edge is also sea-facing
+		const kn = (k + 1) % 6;
+		if (seaEdge[kn]) {
+			const C = corner(k + 1);
+			const angA = normalAngle;
+			const angB = Math.PI / 6 + (Math.PI / 3) * kn;
+			const FAN = 3;
+			for (let f = 0; f < FAN; f++) {
+				const a0 = angA + ((angB - angA) * f) / FAN;
+				const a1 = angA + ((angB - angA) * (f + 1)) / FAN;
+				for (let r = 0; r < SKIRT_RINGS.length - 1; r++) {
+					const R0 = SKIRT_RINGS[r];
+					const R1 = SKIRT_RINGS[r + 1];
+					const p = (ang: number, ring: typeof R0): THREE.Vector3 =>
+						new THREE.Vector3(
+							C.x + Math.cos(ang) * ring.out,
+							ring.y,
+							C.y + Math.sin(ang) * ring.out
+						);
+					const a = p(a0, R0);
+					const b = p(a1, R0);
+					const c = p(a1, R1);
+					const d = p(a0, R1);
+					pushQuad(
+						a,
+						b,
+						c,
+						d,
+						ringColor(r, a.x, a.z),
+						ringColor(r, b.x, b.z),
+						ringColor(r + 1, c.x, c.z),
+						ringColor(r + 1, d.x, d.z)
+					);
+				}
+			}
+		}
 	}
-	if (geos.length === 0) return null;
-	const merged = mergeGeometries(geos, false);
-	for (const g of geos) g.dispose();
-	if (!merged) return null;
-	const mesh = new THREE.Mesh(
-		merged,
-		new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 })
-	);
-	mesh.castShadow = true;
-	mesh.receiveShadow = true;
-	return mesh;
+
+	if (positions.length === 0) return null;
+	const geo = new THREE.BufferGeometry();
+	geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+	geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+	geo.computeVertexNormals();
+	return geo;
 }
 
-function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
+/* --- decorations ---------------------------------------------------------- */
+
+/** Flatten a tile's decoration groups into one world-space geometry with the
+ * material colors baked into vertex colors. */
+function buildDecoGeo(tile: HexTile, rng: Rng): THREE.BufferGeometry | null {
 	const halves: Array<{ biome: BiomeId; sign: -1 | 1 | 0 }> =
 		tile.biomes.length === 2
 			? [
@@ -329,7 +516,6 @@ function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 				px = Math.cos(a) * d;
 				pz = Math.sin(a) * d;
 				const side = px * dirX + pz * dirZ;
-				// keep decorations clear of the transition band
 				ok = half.sign === 0 || (half.sign === 1 ? side > 0.3 : side < -0.3);
 			}
 			if (!ok) continue;
@@ -341,57 +527,36 @@ function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 		}
 	}
 
-	const merged = mergeDecoGroups(decos);
-	if (merged) group.add(merged);
-}
-
-/**
- * The tile prism, vertex-colored so hex edges integrate into the terrain:
- * the bevel ring (and top) take the FIELD color, gently darkened toward the
- * rim — borders read as soft furrows pressed into the clay, not cut lines.
- * Only the vertical walls keep the clay/sea side color, blended softly
- * where the bevel meets them.
- */
-function buildTileBase(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh {
-	const height = HEX_HEIGHT;
-	const geo = hexPrism(HEX_RADIUS, height).toNonIndexed();
-	const sideColor = driftedColor(CLAY_SIDE, rng);
-	const pos = geo.getAttribute('position');
-	const colors = new Float32Array(pos.count * 3);
-	const scratch = new THREE.Color();
-	const bevelBottom = height - BEVEL;
-
-	for (let i = 0; i < pos.count; i++) {
-		const x = pos.getX(i);
-		const y = pos.getY(i);
-		const z = pos.getZ(i);
-		let c: THREE.Color;
-		if (y > bevelBottom - 0.001) {
-			// bevel + top: terrain color, darkened toward the rim -> the crease
-			const t = Math.min(1, Math.max(0, (y - bevelBottom) / BEVEL)); // 0 rim-bottom, 1 top
-			field(tile, tile.x + x, tile.z + z, scratch);
-			scratch.multiplyScalar(0.955 + 0.04 * t);
-			// soften the junction where the bevel meets the clay wall
-			if (t < 0.3) scratch.lerp(sideColor, 1 - t / 0.3);
-			c = scratch;
-		} else {
-			c = sideColor;
-		}
-		colors[i * 3] = c.r;
-		colors[i * 3 + 1] = c.g;
-		colors[i * 3 + 2] = c.b;
+	const geos: THREE.BufferGeometry[] = [];
+	for (const g of decos) {
+		g.updateMatrixWorld(true);
+		g.traverse((obj) => {
+			if (obj instanceof THREE.Mesh) {
+				const geo = (obj.geometry as THREE.BufferGeometry).clone().toNonIndexed();
+				geo.applyMatrix4(obj.matrixWorld);
+				geo.deleteAttribute('uv');
+				const count = geo.getAttribute('position').count;
+				const col = (obj.material as THREE.MeshStandardMaterial).color;
+				const arr = new Float32Array(count * 3);
+				for (let i = 0; i < count; i++) {
+					arr[i * 3] = col.r;
+					arr[i * 3 + 1] = col.g;
+					arr[i * 3 + 2] = col.b;
+				}
+				geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+				geos.push(geo);
+				obj.geometry.dispose();
+				(obj.material as THREE.Material).dispose();
+			}
+		});
 	}
-	geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-	const mesh = new THREE.Mesh(
-		geo,
-		new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, metalness: 0 })
-	);
-	mesh.position.set(tile.x, 0, tile.z);
-	mesh.castShadow = true;
-	mesh.receiveShadow = true;
-	return mesh;
+	if (geos.length === 0) return null;
+	const merged = mergeGeometries(geos, false);
+	for (const g of geos) g.dispose();
+	return merged;
 }
+
+/* --- assembly ------------------------------------------------------------- */
 
 export function buildWorld(world: HexWorld): THREE.Group {
 	const group = new THREE.Group();
@@ -399,24 +564,40 @@ export function buildWorld(world: HexWorld): THREE.Group {
 	const shore = new THREE.Color(SHORE);
 	const field = makeFieldSampler(styles, shore);
 
+	const landSet = new Set(
+		world.tiles.filter((t) => t.kind === 'LAND').map((t) => key(t.q, t.r))
+	);
+	const isSea = (q: number, r: number) => !landSet.has(key(q, r));
+
+	const material = new THREE.MeshStandardMaterial({
+		vertexColors: true,
+		roughness: 0.9,
+		metalness: 0
+	});
+
 	for (const tile of world.tiles) {
-		// SEA tiles are data-only (they feed the coastal shore band); the
-		// visible sea is one unified plane in scene.ts
+		// SEA tiles are data-only; the visible sea is the water simulation
 		if (tile.kind === 'SEA') continue;
 
 		const rng = makeRng(tile.seed);
-		const tileGroup = new THREE.Group();
-		tileGroup.userData.tile = tile;
+		const parts: THREE.BufferGeometry[] = [
+			buildBaseGeo(tile, rng, field),
+			buildTopDiscGeo(tile, rng, field)
+		];
+		const skirt = buildSkirtGeo(tile, rng, field, isSea);
+		if (skirt) parts.push(skirt);
+		const deco = buildDecoGeo(tile, rng);
+		if (deco) parts.push(deco);
 
-		tileGroup.add(buildTileBase(tile, rng, field));
+		const merged = mergeGeometries(parts, false);
+		for (const p of parts) p.dispose();
+		if (!merged) continue;
 
-		const disc = buildTopDisc(tile, rng, field);
-		disc.position.x = tile.x;
-		disc.position.z = tile.z;
-		tileGroup.add(disc);
-
-		placeDecorations(tile, rng, tileGroup);
-		group.add(tileGroup);
+		const mesh = new THREE.Mesh(merged, material);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
+		mesh.userData.tile = tile;
+		group.add(mesh);
 	}
 
 	return group;
