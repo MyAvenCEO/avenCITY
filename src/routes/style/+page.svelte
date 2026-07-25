@@ -5,23 +5,29 @@
 	/** Swatches mirror the @theme tokens in src/lib/styles/tokens.css. */
 	const palettes = [
 		{
-			name: 'Canopy',
-			note: 'The greens, shadow to sunlit leaf. Page floor and primary brand green.',
+			name: 'Paradise — the primary',
+			note: 'The water. The most recognisable thing in the renders and the one colour that is unmistakably this city, so it carries every primary action, link and live state.',
 			swatches: [
-				{ token: 'canopy-deep', hex: '#0E1F18', class: 'bg-canopy-deep' },
-				{ token: 'canopy', hex: '#163024', class: 'bg-canopy' },
-				{ token: 'canopy-soft', hex: '#2C5340', class: 'bg-canopy-soft' },
-				{ token: 'moss', hex: '#4F8A5B', class: 'bg-moss' },
-				{ token: 'frond', hex: '#9FC08C', class: 'bg-frond' }
+				{ token: 'paradise-deep', hex: '#0E5A6E', class: 'bg-paradise-deep' },
+				{ token: 'paradise', hex: '#26A5C9', class: 'bg-paradise' },
+				{ token: 'paradise-bright', hex: '#5AB4D8', class: 'bg-paradise-bright' }
 			]
 		},
 		{
-			name: 'Lagoon',
-			note: 'The water — the primary accent. Every primary action, link and live state.',
+			name: 'Ground — deep water-ink',
+			note: 'The floor of the lagoon. Cool and near-black, so photographs sit on it without being tinted. This is the page floor, never a green.',
 			swatches: [
-				{ token: 'lagoon-deep', hex: '#0E6B70', class: 'bg-lagoon-deep' },
-				{ token: 'lagoon', hex: '#17A5A5', class: 'bg-lagoon' },
-				{ token: 'lagoon-bright', hex: '#2CC5BE', class: 'bg-lagoon-bright' }
+				{ token: 'deep', hex: '#071C22', class: 'bg-deep' },
+				{ token: 'deep-soft', hex: '#0E2A33', class: 'bg-deep-soft' },
+				{ token: 'surface', hex: '#163A44', class: 'bg-surface' }
+			]
+		},
+		{
+			name: 'Foliage — supporting only',
+			note: 'Accents, never a background and never a scrim. An earlier pass made green the ground and everything went murky.',
+			swatches: [
+				{ token: 'moss', hex: '#4F8A5B', class: 'bg-moss' },
+				{ token: 'frond', hex: '#9FC08C', class: 'bg-frond' }
 			]
 		},
 		{
@@ -35,13 +41,13 @@
 		},
 		{
 			name: 'Sky & bone',
-			note: 'The light. Text colours and pale surfaces — never pure white.',
+			note: 'The light. Text colours and pale surfaces — never pure white. Sky is sampled straight from above the dome.',
 			swatches: [
-				{ token: 'sky', hex: '#7FB6DC', class: 'bg-sky' },
+				{ token: 'sky', hex: '#7DA1C5', class: 'bg-sky' },
 				{ token: 'bone', hex: '#F2EBDD', class: 'bg-bone' },
 				{ token: 'chalk', hex: '#FBF8F1', class: 'bg-chalk' },
-				{ token: 'chalk-muted', hex: '#D8DCD2', class: 'bg-chalk-muted' },
-				{ token: 'chalk-faint', hex: '#A9B2A6', class: 'bg-chalk-faint' }
+				{ token: 'chalk-muted', hex: '#D5DDE0', class: 'bg-chalk-muted' },
+				{ token: 'chalk-faint', hex: '#93A5AC', class: 'bg-chalk-faint' }
 			]
 		},
 		{
@@ -85,12 +91,12 @@
 		aria-hidden="true"
 		class="fixed inset-0 -z-20 h-full w-full transform-gpu object-cover will-change-transform"
 	/>
-	<div class="fixed inset-0 -z-10 transform-gpu bg-canopy-deep/80"></div>
+	<div class="fixed inset-0 -z-10 transform-gpu bg-deep/80"></div>
 
 	<div class="mx-auto max-w-6xl px-6 py-16 md:px-12 md:py-24">
 		<header class="flex flex-wrap items-center justify-between gap-4">
 			<a href="/"><Wordmark class="text-2xl text-chalk" /></a>
-			<a href="/" class="label text-chalk-muted transition-colors hover:text-lagoon-bright">
+			<a href="/" class="label text-chalk-muted transition-colors hover:text-paradise-bright">
 				← Back to the city
 			</a>
 		</header>
@@ -107,7 +113,7 @@
 
 		<!-- Colour -->
 		<section class="mt-20">
-			<h2 class="label text-lagoon-bright">01 — Colour</h2>
+			<h2 class="label text-paradise-bright">01 — Colour</h2>
 			<div class="mt-8 space-y-6">
 				{#each palettes as palette}
 					<div class="glass p-8">
@@ -131,7 +137,7 @@
 
 		<!-- Type -->
 		<section class="mt-20">
-			<h2 class="label text-lagoon-bright">02 — Type</h2>
+			<h2 class="label text-paradise-bright">02 — Type</h2>
 			<div class="mt-8 grid gap-6 md:grid-cols-2">
 				<div class="glass p-8">
 					<p class="label text-chalk-faint">Display + body</p>
@@ -158,7 +164,7 @@
 				{#each typeScale as step}
 					<div class="flex flex-col gap-3 py-6 first:pt-0 last:pb-0 md:flex-row md:items-baseline md:gap-8">
 						<div class="md:w-48 md:shrink-0">
-							<p class="label text-lagoon-bright">{step.token}</p>
+							<p class="label text-paradise-bright">{step.token}</p>
 							<p class="mt-1 text-meta text-chalk-faint">{step.use}</p>
 						</div>
 						<p class="{step.class} font-light text-chalk">The impossible becomes possible</p>
@@ -169,7 +175,7 @@
 
 		<!-- Glass -->
 		<section class="mt-20">
-			<h2 class="label text-lagoon-bright">03 — Glass</h2>
+			<h2 class="label text-paradise-bright">03 — Glass</h2>
 			<p class="mt-4 max-w-2xl text-body text-chalk-muted">
 				A convincing pane needs four layers together — tint, blurred and saturated backdrop,
 				a light hairline edge, and an inset top gleam. Drop any one and it becomes a grey
@@ -178,20 +184,20 @@
 			</p>
 			<div class="mt-8 grid gap-6 md:grid-cols-3">
 				<div class="glass p-8">
-					<p class="label text-lagoon-bright">.glass</p>
+					<p class="label text-paradise-bright">.glass</p>
 					<p class="mt-3 text-body text-chalk-muted">
 						The default pane. 20px blur, subtle tint. Use for cards and most content.
 					</p>
 				</div>
 				<div class="glass-lens p-8">
-					<p class="label text-lagoon-bright">.glass-lens</p>
+					<p class="label text-paradise-bright">.glass-lens</p>
 					<p class="mt-3 text-body text-chalk-muted">
 						Hero scale — deeper blur, stronger edge, bigger lift. One per viewport, or
 						the depth hierarchy flattens.
 					</p>
 				</div>
 				<div class="glass-shade p-8">
-					<p class="label text-lagoon-bright">.glass-shade</p>
+					<p class="label text-paradise-bright">.glass-shade</p>
 					<p class="mt-3 text-body text-chalk-muted">
 						Darker tint for when text must win over a bright patch of photograph. Still
 						translucent.
@@ -202,12 +208,12 @@
 
 		<!-- Components -->
 		<section class="mt-20 mb-24">
-			<h2 class="label text-lagoon-bright">04 — Components</h2>
+			<h2 class="label text-paradise-bright">04 — Components</h2>
 			<div class="glass mt-8 space-y-10 p-8">
 				<div>
 					<p class="label text-chalk-faint">Buttons</p>
 					<div class="mt-4 flex flex-wrap items-center gap-4">
-						<button class="btn btn-primary">Primary — lagoon</button>
+						<button class="btn btn-primary">Primary — paradise</button>
 						<button class="btn btn-glass">Secondary — glass</button>
 					</div>
 					<p class="mt-4 max-w-2xl text-meta text-chalk-muted">

@@ -4,62 +4,74 @@
  * ============================================================================
  *
  * THE IDEA
- * Maia City is glass domes standing in a jungle. So the identity is exactly
- * that, and nothing else: LIVING NATURE is the ground layer — real renders of
- * the city, lush and warm and photographic — and everything the interface says
- * sits on LIQUID GLASS floating above it.
+ * Maia City is glass domes standing in a jungle, above turquoise water. So the
+ * identity is exactly that: a living photograph as the ground layer, and
+ * everything the interface says floating on LIQUID GLASS above it.
  *
- * The glass is not a decorative filter. It is the brand's argument: you can
- * put a built thing on top of a living thing without hiding it. Every panel is
- * translucent, so the jungle keeps showing through whatever we build on it.
- * The moment a surface goes opaque, that argument dies — so opaque panels are
- * off-brand unless legibility genuinely demands it.
+ * The glass is not a decorative filter. It is the brand's argument: you can put
+ * a built thing on top of a living thing without hiding it. Every panel is
+ * translucent, so the landscape keeps showing through whatever we build on it.
+ * The moment a surface goes opaque, that argument dies.
+ *
+ * PARADISE IS THE PRIMARY. The water is the most recognisable thing in the
+ * renders and the one colour that is unmistakably *this* city, so it carries
+ * every primary action, link and live state.
+ *
+ * GREEN IS A SUPPORTING ACTOR, NOT THE GROUND. An earlier pass made jungle
+ * green the page floor, the scrims AND the glass tint at once; everything went
+ * murky and the photographs drowned. Foliage greens are now accents only. The
+ * floor is deep water-ink — the near-black teal at the bottom of the lagoon —
+ * which frames the photograph instead of tinting it.
  *
  * THE PALETTE IS SAMPLED, NOT INVENTED.
- * Every colour below is pulled from the city renders in ../assets/images:
- * the lagoon water, the palm canopy, the bamboo struts, the sunlit stone.
- * That is why the glass sits so naturally on the photo — the UI is wearing the
- * photograph's own colours. If a new brand colour is ever needed, sample it
- * from a render; do not pick it from a colour wheel.
+ * These values were pulled by decoding ../assets/images/maia-city-dome.jpg and
+ * averaging real regions: the sky (#7DA1C5), the deep water (#0A3E3B, #167877),
+ * the masonry and the foliage. That is why the glass sits so naturally on the
+ * photo — the UI wears the photograph's own colours. If a new brand colour is
+ * ever needed, sample it from a render; do not pick it from a colour wheel.
  *
- * NO PURE BLACK, NO PURE WHITE. Nothing in a jungle is #000 or #FFF.
+ * NO PURE BLACK, NO PURE WHITE. Nothing outdoors is #000 or #FFF.
  * ========================================================================= */
 
 @theme {
-	/* --- Canopy: the greens, from shadow to sunlit leaf ------------------- */
-	--color-canopy-deep: #0e1f18; /* deepest jungle shadow — page floor, text */
-	--color-canopy: #163024; /* primary brand green */
-	--color-canopy-soft: #2c5340; /* raised green surfaces */
-	--color-moss: #4f8a5b; /* mid foliage — secondary accent */
-	--color-frond: #9fc08c; /* sunlit palm — soft green, muted text on dark */
+	/* --- Ground: deep water-ink -------------------------------------------
+	 * The floor of the lagoon. Cool and near-black, so photographs sit on it
+	 * without being tinted. This replaces the old jungle-green floor. */
+	--color-deep: #071c22; /* page floor */
+	--color-deep-soft: #0e2a33; /* raised surfaces, wells */
+	--color-surface: #163a44; /* the rare opaque panel */
 
-	/* --- Lagoon: the water. The primary accent. --------------------------- */
-	/* That turquoise is the single most recognisable thing in the renders,
-	 * so it carries every primary action, link and live state. */
-	--color-lagoon: #17a5a5;
-	--color-lagoon-bright: #2cc5be; /* hover, glow, active */
-	--color-lagoon-deep: #0e6b70; /* pressed, borders on light */
+	/* --- Paradise: the water. THE PRIMARY BRAND COLOUR. -------------------- */
+	--color-paradise-deep: #0e5a6e; /* pressed, borders, dim state */
+	--color-paradise: #26a5c9; /* primary — actions, links, live state */
+	--color-paradise-bright: #5ab4d8; /* hover, glow, accent text on dark */
 
-	/* --- Bamboo & stone: the built warmth ---------------------------------- */
-	/* The dome struts and the masonry. Used for the human/handmade register —
-	 * secondary buttons, quotes, anything the fellowship said or made. */
+	/* --- Foliage: supporting accent only ----------------------------------
+	 * Never a page background, never a scrim. Use for secondary marks and the
+	 * occasional living/growing state. */
+	--color-moss: #4f8a5b;
+	--color-frond: #9fc08c;
+
+	/* --- Bamboo & stone: the built warmth ----------------------------------
+	 * Dome struts and masonry. The human/handmade register — quotes, anything
+	 * the fellowship said or made. The warm counterweight to paradise. */
+	--color-stone: #8d8577;
 	--color-bamboo: #c9a87c;
 	--color-bamboo-bright: #ddc39b;
-	--color-stone: #8d8577;
 
-	/* --- Sky & bone: the light --------------------------------------------- */
-	--color-sky: #7fb6dc; /* the blue above the dome */
+	/* --- Light -------------------------------------------------------------- */
+	--color-sky: #7da1c5; /* sampled straight from the sky above the dome */
 	--color-bone: #f2ebdd; /* warm sand — light surfaces */
-	--color-chalk: #fbf8f1; /* primary text on dark; never #FFF */
-	--color-chalk-muted: #d8dcd2; /* secondary text on glass */
-	--color-chalk-faint: #a9b2a6; /* meta only, 12px+ — do not use for body */
+	--color-chalk: #fbf8f1; /* primary text; never #FFF */
+	--color-chalk-muted: #d5dde0; /* secondary text — cool, to match the ground */
+	--color-chalk-faint: #93a5ac; /* meta only, 12px+ — never body copy */
 
-	/* --- Status ------------------------------------------------------------ */
+	/* --- Status -------------------------------------------------------------- */
 	--color-ok: #5bc98c;
 	--color-warn: #e0a83f;
 	--color-fail: #d9644a;
 
-	/* --- Type -------------------------------------------------------------- */
+	/* --- Type ---------------------------------------------------------------- */
 	--font-display: 'Chillax', ui-sans-serif, system-ui, sans-serif;
 	--font-sans: 'Chillax', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'AzeretMono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -81,14 +93,13 @@
 	--text-label: 0.6875rem; /* always uppercase, always tracked out */
 	--text-label--line-height: 1.4;
 
-	/* --- Geometry ---------------------------------------------------------- */
-	/* Glass wants generous, liquid corners — a hard 4px edge reads as plastic.
-	 * Panels are the default; the lens is for large hero cards. */
+	/* --- Geometry ------------------------------------------------------------ */
+	/* Glass wants generous, liquid corners — a hard 4px edge reads as plastic. */
 	--radius-chip: 999px;
 	--radius-panel: 1.25rem;
 	--radius-lens: 2rem;
 
-	/* --- Motion ------------------------------------------------------------ */
+	/* --- Motion -------------------------------------------------------------- */
 	/* One curve. Glass should settle, not snap. */
 	--ease-city: cubic-bezier(0.22, 0.61, 0.24, 1);
 	--duration-quick: 180ms;
@@ -101,18 +112,21 @@
  * Compositions, not scale steps, so they live outside @theme and are consumed
  * by the .glass-* classes in base.css.
  *
- * A convincing pane needs FOUR layers, and dropping any one of them is what
- * makes most "glassmorphism" look like a grey box:
+ * A convincing pane needs FOUR layers, and dropping any one is what makes most
+ * "glassmorphism" look like a grey box:
  *   1. tint      — a barely-there wash so text has something to sit on
- *   2. blur      — backdrop-filter, plus saturate() to keep the jungle vivid
- *                  behind it instead of going muddy grey
+ *   2. blur      — backdrop-filter, plus saturate() to keep the landscape vivid
+ *                  behind it instead of going muddy
  *   3. hairline  — a light 1px border; glass has an EDGE
  *   4. highlight — an inset top gleam, the light catching the top curve
+ *
+ * The tints are NEUTRAL WHITE, never green. A tinted tint is what turned the
+ * whole first pass into soup.
  * ------------------------------------------------------------------------ */
 :root {
 	--glass-tint: rgb(255 255 255 / 0.1);
-	--glass-tint-strong: rgb(255 255 255 / 0.16);
-	--glass-tint-dark: rgb(14 31 24 / 0.34);
+	--glass-tint-strong: rgb(255 255 255 / 0.15);
+	--glass-tint-dark: rgb(7 28 34 / 0.38);
 
 	--glass-edge: rgb(255 255 255 / 0.26);
 	--glass-edge-strong: rgb(255 255 255 / 0.42);
@@ -121,11 +135,9 @@
 	--glass-blur-deep: 36px;
 	--glass-saturate: 1.5;
 
-	/* Inset gleam along the top edge + a soft drop so the pane reads as
-	 * floating above the photograph rather than cut into it. */
+	/* Inset gleam along the top edge + a soft drop so the pane reads as floating
+	 * above the photograph rather than cut into it. */
 	--glass-highlight: inset 0 1px 0 0 rgb(255 255 255 / 0.34);
-	--glass-lift:
-		0 1px 2px rgb(14 31 24 / 0.18), 0 12px 32px -8px rgb(14 31 24 / 0.42);
-	--glass-lift-high:
-		0 2px 4px rgb(14 31 24 / 0.2), 0 28px 64px -12px rgb(14 31 24 / 0.55);
+	--glass-lift: 0 1px 2px rgb(7 28 34 / 0.18), 0 12px 32px -8px rgb(7 28 34 / 0.44);
+	--glass-lift-high: 0 2px 4px rgb(7 28 34 / 0.2), 0 28px 64px -12px rgb(7 28 34 / 0.58);
 }

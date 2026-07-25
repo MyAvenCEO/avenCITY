@@ -15,10 +15,10 @@
 		class="absolute inset-0 -z-20 h-full w-full object-cover"
 		loading="lazy"
 	/>
-	<div class="absolute inset-0 -z-10 bg-canopy-deep/75"></div>
+	<div class="absolute inset-0 -z-10 bg-deep/65"></div>
 
 	<div class="mx-auto max-w-5xl px-6 md:px-12">
-		<p class="label text-lagoon-bright">Day {mission.day} of {mission.totalDays}</p>
+		<p class="label text-paradise-bright">Day {mission.day} of {mission.totalDays}</p>
 
 		<h2 class="mt-5 max-w-3xl text-display text-chalk">
 			<span class="font-light">Born knowing almost everything,</span>
@@ -53,7 +53,7 @@
 				{#each domeSpec as spec}
 					<div>
 						<dt class="label text-chalk-faint">{spec.label}</dt>
-						<dd class="mt-2 font-display text-title font-light text-lagoon-bright">
+						<dd class="mt-2 font-display text-title font-light text-paradise-bright">
 							{spec.value}
 						</dd>
 					</div>

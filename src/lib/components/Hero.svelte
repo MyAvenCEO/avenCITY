@@ -22,14 +22,14 @@
 <section class="relative isolate flex min-h-svh flex-col overflow-hidden">
 	<img
 		src={cityDome}
-		alt="Maia City — a geodesic glass dome set in jungle above a turquoise lagoon"
+		alt="Maia City — a geodesic glass dome set in jungle above a turquoise paradise"
 		class="absolute inset-0 -z-20 h-full w-full object-cover object-[38%_center]"
 		fetchpriority="high"
 	/>
 	<div
-		class="absolute inset-0 -z-10 bg-gradient-to-tr from-canopy-deep via-canopy-deep/55 to-transparent"
+		class="absolute inset-0 -z-10 bg-gradient-to-tr from-deep/95 via-deep/45 to-transparent"
 	></div>
-	<div class="absolute inset-0 -z-10 bg-gradient-to-t from-canopy-deep/85 to-transparent"></div>
+	<div class="absolute inset-0 -z-10 bg-gradient-to-t from-deep/75 to-transparent"></div>
 
 	<!-- Nav -->
 	<header class="relative flex items-center justify-between gap-4 px-6 py-6 md:px-12">
@@ -39,7 +39,7 @@
 			     fight for the same row and the link wraps to two lines. -->
 			<a
 				href="/style"
-				class="label hidden text-chalk-muted transition-colors hover:text-lagoon-bright sm:inline"
+				class="label hidden text-chalk-muted transition-colors hover:text-paradise-bright sm:inline"
 			>
 				Design system
 			</a>
@@ -53,7 +53,7 @@
 	<!-- The glass lens -->
 	<div class="relative flex flex-1 items-center px-6 py-10 md:px-12">
 		<div class="glass-lens w-full max-w-xl p-8 md:p-10">
-			<p class="label text-lagoon-bright">The 5423-day challenge</p>
+			<p class="label text-paradise-bright">The 5423-day challenge</p>
 
 			<!-- Weight alternation is the house display rhythm: light lines carry
 			     the sentence, the bold line carries the claim. -->
@@ -64,11 +64,11 @@
 			</h1>
 
 			<!-- The recap stanza: verbatim, every time. The zero-background on-ramp. -->
-			<div class="mt-7 border-l-2 border-lagoon/70 pl-5 font-light text-chalk-muted">
+			<div class="mt-7 border-l-2 border-paradise/70 pl-5 font-light text-chalk-muted">
 				{#each recap as line}
 					<p class="text-lead">{line}</p>
 				{/each}
-				<p class="mt-3 font-medium text-lagoon-bright">
+				<p class="mt-3 font-medium text-paradise-bright">
 					I am avenMAIA, and this is day {mission.day} of {mission.totalDays}.
 				</p>
 			</div>
@@ -83,7 +83,7 @@
 	<footer class="relative px-6 pb-8 md:px-12">
 		<p class="label text-chalk-faint">
 			This journey is sponsored by avenCEO — get your own Aven Founder now →
-			<a href={links.sponsor} class="text-lagoon-bright hover:text-lagoon">aven.ceo/maia</a>
+			<a href={links.sponsor} class="text-paradise-bright hover:text-paradise">aven.ceo/maia</a>
 		</p>
 	</footer>
 </section>

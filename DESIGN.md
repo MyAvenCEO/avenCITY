@@ -26,26 +26,35 @@ glass system cannot be judged as a static swatch sheet.
 
 ## Colour
 
-**The palette is sampled, not invented.** Every value is pulled from the city
-renders in `src/lib/assets/images` — the lagoon water, the palm canopy, the
-bamboo struts, the sunlit stone. That is why the glass sits so naturally on the
-photograph: the UI is wearing the photograph's own colours. If a new brand colour
-is ever needed, sample it from a render. Do not pick it from a colour wheel.
+**The palette is sampled, not invented.** These values were pulled by decoding
+`src/lib/assets/images/maia-city-dome.jpg` and averaging real regions: the sky
+(`#7DA1C5`), the deep water (`#0A3E3B`, `#167877`), the masonry, the foliage.
+That is why the glass sits so naturally on the photograph — the UI is wearing the
+photograph's own colours. If a new brand colour is ever needed, sample it from a
+render. Do not pick it from a colour wheel.
 
 | Family | Tokens | Role |
 | --- | --- | --- |
-| Canopy | `canopy-deep` `canopy` `canopy-soft` `moss` `frond` | The greens, shadow to sunlit leaf. Page floor and primary brand green. |
-| Lagoon | `lagoon-deep` `lagoon` `lagoon-bright` | The water — **the primary accent**. Every primary action, link and live state. |
+| Paradise | `paradise-deep` `paradise` `paradise-bright` | The water — **the primary brand colour**. Every primary action, link and live state. |
+| Ground | `deep` `deep-soft` `surface` | Deep water-ink. The page floor. Cool and near-black so photographs sit on it untinted. |
+| Foliage | `moss` `frond` | **Supporting accent only.** Never a background, never a scrim. |
 | Bamboo & stone | `stone` `bamboo` `bamboo-bright` | The built warmth. The human register: quotes, secondary marks. |
 | Sky & bone | `sky` `bone` `chalk` `chalk-muted` `chalk-faint` | The light. Text and pale surfaces. |
 | Status | `ok` `warn` `fail` | State only. Never decorative. |
 
-Two rules:
+Three rules:
 
-- **No pure black, no pure white.** Nothing in a jungle is `#000` or `#FFF`.
-  Text is `chalk` (`#FBF8F1`); the floor is `canopy-deep` (`#0E1F18`).
-- **`chalk-faint` is for meta only** — captions, timestamps, 12px and up. Its
-  contrast is tuned for incidental text and it must never carry body copy.
+- **Paradise is the primary.** The water is the most recognisable thing in the
+  renders and the one colour that is unmistakably *this* city.
+- **Green is a supporting actor, not the ground.** An earlier pass made jungle
+  green the page floor, the scrims *and* the glass tint at once; everything went
+  murky and the photographs drowned. The green you see should come from the
+  photograph itself, never from the UI tinting it. Glass tints are neutral white.
+- **No pure black, no pure white.** Nothing outdoors is `#000` or `#FFF`.
+  Text is `chalk` (`#FBF8F1`); the floor is `deep` (`#071C22`).
+
+`chalk-faint` is for meta only — captions, timestamps, 12px and up. Its contrast
+is tuned for incidental text and it must never carry body copy.
 
 ## Type
 
@@ -101,7 +110,7 @@ See the fixed layers in [`src/routes/style/+page.svelte`](src/routes/style/+page
 
 ## Components
 
-- **Buttons** — `.btn-primary` is lagoon: the water is the call to action. One
+- **Buttons** — `.btn-primary` is paradise: the water is the call to action. One
   primary per view. `.btn-glass` carries everything secondary so it never
   competes.
 - **Chips** — `.chip` is a `.label` wearing glass. The `.pulse-dot` marks
