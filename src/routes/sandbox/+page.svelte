@@ -8,8 +8,9 @@
 	let api: SandboxApi | undefined;
 	let biome: BiomeId = $state('MEADOW');
 	let seed = $state(Math.floor(Math.random() * 90000) + 10000);
-	// Upgrade-level styling variants land here later; LV.1 is today's look.
-	let level = $state(1);
+	// LV.0 = the natural biome. LV.1+ adds the first production building
+	// (dome/extractor) and upgrade styling variants — coming soon.
+	let level = $state(0);
 
 	onMount(() => {
 		let disposed = false;
@@ -78,13 +79,13 @@
 			</button>
 			<div class="hud-pill pointer-events-auto !gap-1.5">
 				<span class="hud-label mr-1">style level</span>
-				{#each [1, 2, 3, 4, 5] as lv}
+				{#each [0, 1, 2, 3, 4, 5] as lv}
 					<button
 						class="rounded-full px-2.5 py-1 font-mono text-[0.7rem] font-semibold transition-colors
 							{lv === level ? 'bg-ink text-cloud' : 'text-ink-soft'}
-							{lv > 1 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}"
-						disabled={lv > 1}
-						title={lv > 1 ? 'upgrade-level styling variants — coming soon' : 'current styling'}
+							{lv > 0 ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}"
+						disabled={lv > 0}
+						title={lv > 0 ? 'LV.1+ adds the first production building — coming soon' : 'natural state'}
 						onclick={() => (level = lv)}
 					>
 						LV.{lv}
