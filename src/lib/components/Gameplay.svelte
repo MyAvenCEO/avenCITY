@@ -144,8 +144,8 @@
 		class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 md:px-12"
 	>
 		<p class="label text-ink-faint">avenCITY — Build. Invest. Connect. Prosper.</p>
-		<a href="/style" class="label text-ink-soft transition-colors hover:text-amber-deep">
-			Design system
+		<a href="/concept" class="label text-ink-soft transition-colors hover:text-amber-deep">
+			Concept
 		</a>
 	</div>
 </footer>

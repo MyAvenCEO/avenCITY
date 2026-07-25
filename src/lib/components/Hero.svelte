@@ -45,8 +45,8 @@
 				<p class="label mt-2 text-ink-faint">{tagline}</p>
 			</div>
 			<div class="flex items-center gap-3">
-				<a href="/style" class="label text-ink-soft transition-colors hover:text-amber-deep">
-					Design system
+				<a href="/concept" class="label text-ink-soft transition-colors hover:text-amber-deep">
+					Concept
 				</a>
 				<span class="chip label">
 					<span class="pulse-dot" aria-hidden="true"></span>
