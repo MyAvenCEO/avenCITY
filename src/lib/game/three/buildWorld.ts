@@ -22,7 +22,30 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { AXIAL_DIRS, key, WATER_BIOME, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
 import { makeRng, type Rng } from '../rng';
-import { blobTree, bush, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
+import {
+	berryBush,
+	blobTree,
+	bush,
+	cactus,
+	cairn,
+	crystal,
+	flower,
+	goldTuft,
+	lilyPad,
+	mudMound,
+	oreRock,
+	palm,
+	peak,
+	pebble,
+	pine,
+	puffTree,
+	reeds,
+	rock,
+	sheaf,
+	sheep,
+	sunflower,
+	tuft
+} from './decorations';
 
 const HEX_RADIUS = 1.0; // flush — tiles form one continuous ground
 const HEX_HEIGHT = 0.5; // uniform — the board is flat
@@ -46,54 +69,89 @@ interface BiomeSpec {
 const BIOMES: Record<BiomeId, BiomeSpec> = {
 	LAKE: {
 		top: '#54c6dc',
-		density: [0, 2],
-		deco: (rng) => pebble(rng)
+		density: [2, 4],
+		deco: (rng) =>
+			rng.chance(0.5) ? lilyPad(rng) : rng.chance(0.55) ? reeds(rng) : pebble(rng)
 	},
 	CLAYPIT: {
 		top: '#d9a983',
-		density: [1, 3],
-		deco: (rng) => (rng.chance(0.6) ? pebble(rng) : rock(rng, 0.9))
+		density: [3, 5],
+		deco: (rng) =>
+			rng.chance(0.5) ? mudMound(rng) : rng.chance(0.5) ? pebble(rng) : rock(rng, 0.9)
 	},
 	FOREST: {
 		top: '#77bd62',
 		density: [12, 22],
 		deco: (rng) =>
-			rng.chance(0.35) ? bush(rng) : rng.chance(0.55) ? pine(rng) : blobTree(rng)
+			rng.chance(0.3)
+				? bush(rng)
+				: rng.chance(0.12)
+					? berryBush(rng)
+					: rng.chance(0.55)
+						? pine(rng)
+						: blobTree(rng)
 	},
 	GROVE: {
 		top: '#8ecb84',
-		density: [5, 9],
-		deco: (rng) => (rng.chance(0.45) ? bush(rng) : rng.chance(0.5) ? flower(rng) : blobTree(rng))
+		density: [6, 10],
+		deco: (rng) =>
+			rng.chance(0.4)
+				? berryBush(rng)
+				: rng.chance(0.35)
+					? bush(rng)
+					: rng.chance(0.4)
+						? flower(rng)
+						: blobTree(rng)
 	},
 	MOUNTAIN: {
 		top: '#b3ac9f',
-		density: [1, 2],
-		deco: (rng) => (rng.chance(0.7) ? peak(rng) : rock(rng, 1.4))
+		density: [2, 4],
+		deco: (rng) =>
+			rng.chance(0.45) ? peak(rng) : rng.chance(0.5) ? cairn(rng) : rock(rng, 1.6)
 	},
 	ORECLIFF: {
 		top: '#9c9184',
-		density: [2, 4],
-		deco: (rng) => (rng.chance(0.5) ? rock(rng, 1.2) : peak(rng))
+		density: [3, 5],
+		deco: (rng) =>
+			rng.chance(0.45) ? oreRock(rng) : rng.chance(0.5) ? crystal(rng) : rock(rng, 1.2)
 	},
 	MEADOW: {
 		top: '#a8da85',
-		density: [3, 7],
-		deco: (rng) => (rng.chance(0.2) ? flower(rng) : rng.chance(0.12) ? blobTree(rng) : tuft(rng))
+		density: [4, 8],
+		deco: (rng) =>
+			rng.chance(0.14)
+				? sheep(rng)
+				: rng.chance(0.25)
+					? flower(rng)
+					: rng.chance(0.18)
+						? bush(rng)
+						: rng.chance(0.1)
+							? blobTree(rng)
+							: tuft(rng)
 	},
 	FIBERFIELD: {
 		top: '#c9d789',
-		density: [6, 11],
-		deco: (rng) => (rng.chance(0.8) ? tuft(rng) : flower(rng))
+		density: [7, 12],
+		deco: (rng) =>
+			rng.chance(0.3) ? sheaf(rng) : rng.chance(0.65) ? goldTuft(rng) : flower(rng)
 	},
 	DUNES: {
 		top: '#f0d99e',
-		density: [1, 3],
-		deco: (rng) => (rng.chance(0.45) ? puffTree(rng) : rng.chance(0.5) ? cactus(rng) : pebble(rng))
+		density: [2, 4],
+		deco: (rng) =>
+			rng.chance(0.42)
+				? palm(rng)
+				: rng.chance(0.35)
+					? cactus(rng)
+					: rng.chance(0.4)
+						? puffTree(rng)
+						: pebble(rng)
 	},
 	SUNPLAINS: {
 		top: '#f2e2a4',
-		density: [0, 2],
-		deco: (rng) => (rng.chance(0.6) ? pebble(rng) : flower(rng))
+		density: [3, 6],
+		deco: (rng) =>
+			rng.chance(0.5) ? sunflower(rng) : rng.chance(0.5) ? goldTuft(rng) : pebble(rng)
 	}
 };
 
@@ -198,6 +256,7 @@ function buildStyles(world: HexWorld): Map<string, TileStyle> {
  */
 function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Color) {
 	const scratch = new THREE.Color();
+	const waterColor = new THREE.Color('#4ec0d6');
 	return (tile: HexTile, wx: number, wz: number, out: THREE.Color): void => {
 		let sumW = 0;
 		let water = 0;
@@ -223,6 +282,11 @@ function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Colo
 		// the shore: a soft sandy band where land turns to water
 		const shoreW = Math.exp(-(((water - 0.5) / 0.16) ** 2));
 		out.lerp(shoreColor, shoreW * 0.85);
+
+		// water is WATER: wherever wetness wins, snap to solid stream blue so
+		// rivers and lake narrows stay one continuous body with blue-on-blue
+		// edges — never muddy land-tinted blends between water tiles
+		out.lerp(waterColor, smoothstep(0.5, 0.68, water) * 0.9);
 	};
 }
 
@@ -557,6 +621,47 @@ function buildDecoGeo(tile: HexTile, rng: Rng): THREE.BufferGeometry | null {
 }
 
 /* --- assembly ------------------------------------------------------------- */
+
+/**
+ * A single isolated tile of one biome — the sandbox specimen. Same builders
+ * as the real world (base, disc, decorations; no coast skirt), so what the
+ * sandbox shows is exactly what the island renders. `seed` varies the
+ * decoration layout; a future `level` parameter will select the biome's
+ * upgrade-level styling variants.
+ */
+export function buildBiomeTile(biome: BiomeId, seed: number): THREE.Mesh {
+	const tile: HexTile = {
+		q: 0,
+		r: 0,
+		x: 0,
+		z: 0,
+		kind: 'LAND',
+		biomes: [biome],
+		splitDir: 0,
+		seed
+	};
+	const world: HexWorld = { seed, tiles: [tile] };
+	const styles = buildStyles(world);
+	const field = makeFieldSampler(styles, new THREE.Color(SHORE));
+	const rng = makeRng(seed);
+
+	const parts: THREE.BufferGeometry[] = [
+		buildBaseGeo(tile, rng, field),
+		buildTopDiscGeo(tile, rng, field)
+	];
+	const deco = buildDecoGeo(tile, rng);
+	if (deco) parts.push(deco);
+	const merged = mergeGeometries(parts, false);
+	for (const p of parts) p.dispose();
+
+	const mesh = new THREE.Mesh(
+		merged ?? new THREE.BufferGeometry(),
+		new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 })
+	);
+	mesh.castShadow = true;
+	mesh.receiveShadow = true;
+	return mesh;
+}
 
 export function buildWorld(world: HexWorld): THREE.Group {
 	const group = new THREE.Group();

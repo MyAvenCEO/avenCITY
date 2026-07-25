@@ -47,9 +47,14 @@
 				<span class="font-semibold">avenCITY</span>
 				<span class="hud-label">world {seed}</span>
 			</div>
-			<button class="hud-pill hud-btn pointer-events-auto font-semibold" onclick={newWorld}>
-				↻ new world
-			</button>
+			<div class="flex gap-2">
+				<a href="/sandbox" class="hud-pill hud-btn pointer-events-auto font-semibold">
+					biome sandbox
+				</a>
+				<button class="hud-pill hud-btn pointer-events-auto font-semibold" onclick={newWorld}>
+					↻ new world
+				</button>
+			</div>
 		</div>
 
 		<div class="flex items-end justify-between gap-3">

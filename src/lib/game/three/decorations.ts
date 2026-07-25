@@ -203,6 +203,258 @@ export function pebble(rng: Rng): THREE.Group {
 	return g;
 }
 
+/** Clay sheep — MEADOW signature. A woolly capsule with a dark head. */
+export function sheep(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const body = shadow(
+		new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.12, 4, 10), clay(jitterColor(rng, '#f7f3ea', 0.002, 0.01, 0.03)))
+	);
+	body.rotation.z = Math.PI / 2;
+	body.position.y = 0.11;
+	g.add(body);
+	const head = shadow(
+		new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), clay('#4a423b'))
+	);
+	head.position.set(0.13, 0.13, 0);
+	g.add(head);
+	g.rotation.y = rng.range(0, Math.PI * 2);
+	g.scale.setScalar(rng.range(0.85, 1.15));
+	return g;
+}
+
+/** Berry bush — GROVE signature: a bush studded with bright berries. */
+export function berryBush(rng: Rng): THREE.Group {
+	const g = bush(rng);
+	const berryColor = rng.pick(['#e05e4a', '#f09a8b', '#f5d76e']);
+	const n = rng.int(3, 5);
+	for (let i = 0; i < n; i++) {
+		const b = shadow(new THREE.Mesh(new THREE.SphereGeometry(0.028, 6, 5), clay(berryColor)));
+		const a = rng.range(0, Math.PI * 2);
+		const el = rng.range(0.2, 1.1);
+		b.position.set(Math.cos(a) * 0.13 * Math.cos(el), 0.1 + 0.1 * Math.sin(el), Math.sin(a) * 0.13 * Math.cos(el));
+		g.add(b);
+	}
+	return g;
+}
+
+/** Cairn — MOUNTAIN signature: hand-stacked stones. */
+export function cairn(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(3, 4);
+	let y = 0.03;
+	for (let i = 0; i < n; i++) {
+		const r = 0.11 - i * 0.024;
+		const stone = shadow(
+			new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), clay(jitterColor(rng, '#a8a094', 0.004, 0.02, 0.05)))
+		);
+		stone.scale.y = 0.55;
+		stone.position.set(rng.jitter(0, 0.012), y, rng.jitter(0, 0.012));
+		stone.rotation.y = rng.range(0, Math.PI);
+		g.add(stone);
+		y += r * 0.9;
+	}
+	return g;
+}
+
+/** Ore rock — ORECLIFF signature: dark stone with gold nuggets. */
+export function oreRock(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const base = shadow(
+		new THREE.Mesh(
+			new THREE.DodecahedronGeometry(rng.range(0.14, 0.22), 1),
+			clay(jitterColor(rng, '#6e675e', 0.004, 0.02, 0.04))
+		)
+	);
+	base.position.y = 0.08;
+	base.scale.y = 0.75;
+	base.rotation.set(rng.next(), rng.next() * 3, rng.next());
+	g.add(base);
+	const n = rng.int(2, 4);
+	for (let i = 0; i < n; i++) {
+		const nug = shadow(new THREE.Mesh(new THREE.IcosahedronGeometry(0.03, 0), clay('#e3b34e')));
+		const a = rng.range(0, Math.PI * 2);
+		nug.position.set(Math.cos(a) * 0.12, rng.range(0.05, 0.16), Math.sin(a) * 0.12);
+		g.add(nug);
+	}
+	return g;
+}
+
+/** Amber crystal shards — ORECLIFF accent. */
+export function crystal(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(2, 3);
+	for (let i = 0; i < n; i++) {
+		const h = rng.range(0.12, 0.24);
+		const c = shadow(
+			new THREE.Mesh(
+				new THREE.OctahedronGeometry(0.05, 0),
+				clay(rng.pick(['#f2cd74', '#f5b85c', '#e8d9a0']))
+			)
+		);
+		c.scale.set(0.7, h / 0.05, 0.7);
+		c.position.set(rng.jitter(0, 0.09), h * 0.5, rng.jitter(0, 0.09));
+		c.rotation.y = rng.range(0, Math.PI);
+		c.rotation.z = rng.jitter(0, 0.2);
+		g.add(c);
+	}
+	return g;
+}
+
+/** Palm — DUNES signature: curved trunk, fan of leaves, coconuts. */
+export function palm(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const lean = rng.jitter(0, 0.22);
+	const segs = 3;
+	let x = 0;
+	let y = 0;
+	for (let i = 0; i < segs; i++) {
+		const seg = shadow(
+			new THREE.Mesh(new THREE.CylinderGeometry(0.035 - i * 0.005, 0.045 - i * 0.005, 0.18, 7), clay(jitterColor(rng, '#b08a5e')))
+		);
+		seg.position.set(x, y + 0.09, 0);
+		seg.rotation.z = lean * (i + 1) * 0.6;
+		g.add(seg);
+		x += Math.sin(lean * (i + 1) * 0.6) * 0.16;
+		y += Math.cos(lean * (i + 1) * 0.6) * 0.165;
+	}
+	const crown = new THREE.Group();
+	crown.position.set(x, y + 0.02, 0);
+	const leaves = rng.int(5, 7);
+	const leafColor = jitterColor(rng, '#5aa86e');
+	for (let i = 0; i < leaves; i++) {
+		const leaf = shadow(new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.2, 3, 6), clay(leafColor)));
+		leaf.scale.set(1, 1, 0.4);
+		const a = (i / leaves) * Math.PI * 2 + rng.jitter(0, 0.2);
+		leaf.position.set(Math.cos(a) * 0.11, 0.02, Math.sin(a) * 0.11);
+		leaf.rotation.y = -a;
+		leaf.rotation.z = Math.PI / 2 - 0.55 + rng.jitter(0, 0.12);
+		crown.add(leaf);
+	}
+	for (let i = 0; i < 2; i++) {
+		const nut = shadow(new THREE.Mesh(new THREE.SphereGeometry(0.032, 7, 5), clay('#8a6844')));
+		const a = rng.range(0, Math.PI * 2);
+		nut.position.set(Math.cos(a) * 0.05, -0.02, Math.sin(a) * 0.05);
+		crown.add(nut);
+	}
+	g.add(crown);
+	g.rotation.y = rng.range(0, Math.PI * 2);
+	g.scale.setScalar(rng.range(0.9, 1.35));
+	return g;
+}
+
+/** Sunflower — SUNPLAINS signature: golden disc chasing the sun. */
+export function sunflower(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const h = rng.range(0.22, 0.34);
+	const stem = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, h, 5), clay('#7fae62')));
+	stem.position.y = h / 2;
+	g.add(stem);
+	const head = new THREE.Group();
+	head.position.y = h;
+	const petals = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.018, 12), clay(jitterColor(rng, '#f5c95c', 0.008, 0.05, 0.03))));
+	head.add(petals);
+	const core = shadow(new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), clay('#8a6432')));
+	core.scale.y = 0.4;
+	core.position.y = 0.012;
+	head.add(core);
+	head.rotation.x = rng.range(0.25, 0.5);
+	head.rotation.y = rng.range(0, Math.PI * 2);
+	g.add(head);
+	g.scale.setScalar(rng.range(0.85, 1.2));
+	return g;
+}
+
+/** Cattail reeds — LAKE / wet edges: tall stems with brown heads. */
+export function reeds(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(4, 7);
+	for (let i = 0; i < n; i++) {
+		const h = rng.range(0.24, 0.42);
+		const stem = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.011, h, 5), clay(jitterColor(rng, '#9cb86a'))));
+		const px = rng.jitter(0, 0.09);
+		const pz = rng.jitter(0, 0.09);
+		stem.position.set(px, h / 2, pz);
+		stem.rotation.z = rng.jitter(0, 0.12);
+		g.add(stem);
+		if (rng.chance(0.7)) {
+			const head = shadow(new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.05, 3, 6), clay('#8a6432')));
+			head.position.set(px + stem.rotation.z * -h * 0.5, h + 0.03, pz);
+			g.add(head);
+		}
+	}
+	return g;
+}
+
+/** Lily pad — LAKE surface: floating disc, sometimes flowering. */
+export function lilyPad(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(1, 3);
+	for (let i = 0; i < n; i++) {
+		const pad = shadow(
+			new THREE.Mesh(new THREE.CylinderGeometry(rng.range(0.07, 0.12), rng.range(0.07, 0.12), 0.012, 9), clay(jitterColor(rng, '#6fae62')))
+		);
+		pad.position.set(rng.jitter(0, 0.14), 0.008, rng.jitter(0, 0.14));
+		g.add(pad);
+		if (rng.chance(0.35)) {
+			const bloom = shadow(new THREE.Mesh(new THREE.IcosahedronGeometry(0.032, 1), clay('#f2b8c6')));
+			bloom.position.copy(pad.position).setY(0.04);
+			g.add(bloom);
+		}
+	}
+	return g;
+}
+
+/** Wheat/flax sheaf — FIBERFIELD signature: a leaning golden bundle. */
+export function sheaf(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(5, 8);
+	for (let i = 0; i < n; i++) {
+		const h = rng.range(0.2, 0.3);
+		const straw = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.01, h, 5), clay(jitterColor(rng, '#dcb84f', 0.01, 0.06, 0.05))));
+		const a = (i / n) * Math.PI * 2;
+		straw.position.set(Math.cos(a) * 0.045, h / 2, Math.sin(a) * 0.045);
+		straw.rotation.z = Math.cos(a) * 0.22;
+		straw.rotation.x = -Math.sin(a) * 0.22;
+		g.add(straw);
+	}
+	g.rotation.y = rng.range(0, Math.PI * 2);
+	return g;
+}
+
+/** Golden grass — tall dry tuft for FIBERFIELD / SUNPLAINS. */
+export function goldTuft(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(3, 5);
+	const gold = jitterColor(rng, '#d9c27f', 0.015, 0.08, 0.05);
+	for (let i = 0; i < n; i++) {
+		const blade = shadow(
+			new THREE.Mesh(new THREE.ConeGeometry(0.028, rng.range(0.16, 0.28), 6), clay(gold))
+		);
+		blade.position.set(rng.jitter(0, 0.07), 0.09, rng.jitter(0, 0.07));
+		blade.rotation.z = rng.jitter(0, 0.3);
+		g.add(blade);
+	}
+	return g;
+}
+
+/** Terracotta mud mound — CLAYPIT signature. */
+export function mudMound(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const mound = shadow(
+		new THREE.Mesh(new THREE.SphereGeometry(rng.range(0.12, 0.2), 9, 6), clay(jitterColor(rng, '#c08258', 0.008, 0.04, 0.05)))
+	);
+	mound.scale.y = rng.range(0.35, 0.5);
+	mound.position.y = 0.04;
+	g.add(mound);
+	if (rng.chance(0.6)) {
+		const top = shadow(new THREE.Mesh(new THREE.SphereGeometry(0.06, 7, 5), clay(jitterColor(rng, '#a9703f'))));
+		top.scale.y = 0.4;
+		top.position.y = 0.1;
+		g.add(top);
+	}
+	return g;
+}
+
 /** Cactus — DUNES alternative to puff trees. */
 export function cactus(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
