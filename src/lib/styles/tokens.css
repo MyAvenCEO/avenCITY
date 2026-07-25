@@ -1,156 +1,104 @@
 /* ============================================================================
  * avenCITY — Corporate Identity tokens
- * "Liquid Glass on Living Nature"
+ * "The Founder's Atlas"
  * ============================================================================
  *
  * THE IDEA
- * Maia City is glass domes standing in a jungle, above turquoise water. So the
- * identity is exactly that: a living photograph as the ground layer, and
- * everything the interface says floating on LIQUID GLASS above it.
+ * avenCITY is a city-building investment game: found districts, ignite sparks,
+ * connect routes, and watch income streams tick back every hour. The identity
+ * is the game board itself — a hand-drawn atlas: warm paper, engraved ink,
+ * olive domes, and amber trade routes.
  *
- * The glass is not a decorative filter. It is the brand's argument: you can put
- * a built thing on top of a living thing without hiding it. Every panel is
- * translucent, so the landscape keeps showing through whatever we build on it.
- * The moment a surface goes opaque, that argument dies.
+ * LIGHT BY DESIGN. The board is paper, not a screen. Panels are brighter paper
+ * on the page's paper, separated by hairline rules — never heavy shadows,
+ * never glass, never gradients doing structural work.
  *
- * PARADISE IS THE PRIMARY. The water is the most recognisable thing in the
- * renders and the one colour that is unmistakably *this* city, so it carries
- * every primary action, link and live state.
+ * THE PALETTE IS THE MAP'S. Ink for words, olive for what you build, amber for
+ * what moves (routes, energy, the sun), gold for what you earn. If a new
+ * colour is needed, it must plausibly exist on this map.
  *
- * GREEN IS A SUPPORTING ACTOR, NOT THE GROUND. An earlier pass made jungle
- * green the page floor, the scrims AND the glass tint at once; everything went
- * murky and the photographs drowned. Foliage greens are now accents only. The
- * floor is deep water-ink — the near-black teal at the bottom of the lagoon —
- * which frames the photograph instead of tinting it.
- *
- * THE PALETTE IS SAMPLED, NOT INVENTED.
- * These values were pulled by decoding ../assets/images/maia-city-dome.jpg and
- * averaging real regions: the sky (#7DA1C5), the deep water (#0A3E3B, #167877),
- * the masonry and the foliage. That is why the glass sits so naturally on the
- * photo — the UI wears the photograph's own colours. If a new brand colour is
- * ever needed, sample it from a render; do not pick it from a colour wheel.
- *
- * NO PURE BLACK, NO PURE WHITE. Nothing outdoors is #000 or #FFF.
+ * NO PURE BLACK, NO PURE WHITE. Ink on paper is #29271F on #F1ECDF.
  * ========================================================================= */
 
 @theme {
-	/* --- Ground: deep water-ink -------------------------------------------
-	 * The floor of the lagoon. Cool and near-black, so photographs sit on it
-	 * without being tinted. This replaces the old jungle-green floor. */
-	--color-deep: #071c22; /* page floor */
-	--color-deep-soft: #0e2a33; /* raised surfaces, wells */
-	--color-surface: #163a44; /* the rare opaque panel */
+	/* --- Paper: the board ---------------------------------------------------- */
+	--color-paper: #f1ecdf; /* page */
+	--color-paper-bright: #faf7ee; /* panels */
+	--color-paper-deep: #e7e0ce; /* wells, insets, hover */
 
-	/* --- Paradise: the water. THE PRIMARY BRAND COLOUR. -------------------- */
-	--color-paradise-deep: #0e5a6e; /* pressed, borders, dim state */
-	--color-paradise: #26a5c9; /* primary — actions, links, live state */
-	--color-paradise-bright: #5ab4d8; /* hover, glow, accent text on dark */
+	/* --- Ink: the engraving --------------------------------------------------- */
+	--color-ink: #29271f; /* primary text, primary buttons */
+	--color-ink-soft: #57534a; /* secondary text */
+	--color-ink-faint: #8a8474; /* meta only, 12px+ — never body copy */
+	--color-hairline: #d8d0bc; /* the 1px rules that structure everything */
 
-	/* --- Foliage: supporting accent only ----------------------------------
-	 * Never a page background, never a scrim. Use for secondary marks and the
-	 * occasional living/growing state. */
-	--color-moss: #4f8a5b;
-	--color-frond: #9fc08c;
+	/* --- Moss: what you build ------------------------------------------------- */
+	/* The dome glass and its gardens. District identity, growth, agriculture. */
+	--color-moss: #6c7a52;
+	--color-moss-deep: #47523a;
+	--color-moss-faint: #dfe3cf; /* tinted fills behind moss content */
 
-	/* --- Bamboo & stone: the built warmth ----------------------------------
-	 * Dome struts and masonry. The human/handmade register — quotes, anything
-	 * the fellowship said or made. The warm counterweight to paradise. */
-	--color-stone: #8d8577;
-	--color-bamboo: #c9a87c;
-	--color-bamboo-bright: #ddc39b;
+	/* --- Amber: what moves ---------------------------------------------------- */
+	/* Trade routes, energy, the season sun. THE ACCENT — active states, links,
+	 * the pulse of the economy. */
+	--color-amber: #c98a3b;
+	--color-amber-deep: #a06a24;
+	--color-amber-faint: #f3e2c8;
 
-	/* --- Light -------------------------------------------------------------- */
-	--color-sky: #7da1c5; /* sampled straight from the sky above the dome */
-	--color-bone: #f2ebdd; /* warm sand — light surfaces */
-	--color-chalk: #fbf8f1; /* primary text; never #FFF */
-	--color-chalk-muted: #d5dde0; /* secondary text — cool, to match the ground */
-	--color-chalk-faint: #93a5ac; /* meta only, 12px+ — never body copy */
+	/* --- Gold: what you earn --------------------------------------------------- */
+	--color-gold: #b3892e; /* ratings, yields, the city's crest */
 
-	/* --- Status -------------------------------------------------------------- */
-	--color-ok: #5bc98c;
-	--color-warn: #e0a83f;
-	--color-fail: #d9644a;
+	/* --- Water: the map's edge -------------------------------------------------- */
+	--color-water: #c7d6cb; /* coastal tint, calm backgrounds */
 
-	/* --- Type ---------------------------------------------------------------- */
-	--font-display: 'Chillax', ui-sans-serif, system-ui, sans-serif;
+	/* --- Status ------------------------------------------------------------------ */
+	--color-ok: #5f8a4e;
+	--color-warn: #c98a3b;
+	--color-fail: #b85c41;
+
+	/* --- Type ---------------------------------------------------------------------- */
+	--font-display: 'Playfair', 'Times New Roman', serif;
 	--font-sans: 'Chillax', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'AzeretMono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
 	/* Display sizes are fluid; reading sizes are fixed so the rhythm never
 	 * wobbles between breakpoints. */
-	--text-hero: clamp(2.75rem, 7.5vw, 6rem);
-	--text-hero--line-height: 0.95;
-	--text-display: clamp(1.875rem, 4vw, 3rem);
-	--text-display--line-height: 1.08;
-	--text-title: 1.375rem;
+	--text-hero: clamp(2.75rem, 7vw, 5.5rem);
+	--text-hero--line-height: 1.02;
+	--text-display: clamp(1.75rem, 3.5vw, 2.75rem);
+	--text-display--line-height: 1.12;
+	--text-title: 1.3125rem;
 	--text-title--line-height: 1.3;
 	--text-lead: 1.125rem;
 	--text-lead--line-height: 1.6;
-	--text-body: 1rem;
-	--text-body--line-height: 1.7;
+	--text-body: 0.9375rem;
+	--text-body--line-height: 1.65;
 	--text-meta: 0.8125rem;
 	--text-meta--line-height: 1.55;
 	--text-label: 0.6875rem; /* always uppercase, always tracked out */
 	--text-label--line-height: 1.4;
 
-	/* --- Geometry ------------------------------------------------------------ */
-	/* Glass wants generous, liquid corners — a hard 4px edge reads as plastic.
-	 * Liquid-glass radii run larger than typical cards; the curve is where the
-	 * specular rim lives, so it needs room to sweep. */
+	/* --- Geometry -------------------------------------------------------------------- */
+	/* Printed-card corners: soft but disciplined. The pill is reserved for
+	 * place-name labels and chips, exactly as on the map. */
 	--radius-chip: 999px;
-	--radius-panel: 1.75rem;
-	--radius-lens: 2.5rem;
+	--radius-panel: 1rem;
+	--radius-plate: 1.5rem;
 
-	/* --- Motion -------------------------------------------------------------- */
-	/* One curve. Glass should settle, not snap. */
-	--ease-city: cubic-bezier(0.22, 0.61, 0.24, 1);
-	--duration-quick: 180ms;
-	--duration-settle: 420ms;
+	/* --- Motion ---------------------------------------------------------------------- */
+	/* Paper turns, it doesn't bounce. One curve, two speeds. */
+	--ease-city: cubic-bezier(0.25, 0.6, 0.3, 1);
+	--duration-quick: 160ms;
+	--duration-settle: 360ms;
 }
 
 /* ---------------------------------------------------------------------------
- * Liquid Glass recipe (Apple-style)
+ * Panel recipe — compositions consumed by base.css
  * ---------------------------------------------------------------------------
- * Compositions, not scale steps, so they live outside @theme and are consumed
- * by the .glass-* classes in base.css.
- *
- * The defining property of Apple's Liquid Glass is that it is LUMINOUS, never
- * murky: the material reads as a lens that gathers light, not a frosted slab
- * that eats it. Five layers, together:
- *   1. tint       — neutral white wash (never a colour; a tinted tint is soup)
- *   2. backdrop   — heavy blur + saturate() + brightness(). The brightness
- *                   boost is the difference between liquid glass and mud.
- *   3. specular   — a ~1px GRADIENT rim, bright top-left fading out and
- *                   returning bottom-right, like light wrapping a lens edge.
- *                   A flat 1px border is exactly what it must not be.
- *   4. bloom      — a soft inner light along the top, the glass catching sky
- *   5. lift       — a deep soft drop shadow; the pane floats, it isn't cut in
+ * Structure comes from HAIRLINES, not shadows. The shadow exists only to lift
+ * a panel a hair off the board; if you can point at the shadow, it's too big.
  * ------------------------------------------------------------------------ */
 :root {
-	--glass-tint: rgb(255 255 255 / 0.12);
-	--glass-tint-strong: rgb(255 255 255 / 0.18);
-	--glass-tint-dark: rgb(10 30 38 / 0.26);
-
-	--glass-blur: 28px;
-	--glass-blur-deep: 44px;
-	--glass-saturate: 1.8;
-	--glass-brightness: 1.15;
-
-	/* Specular rim — rendered as a masked gradient stroke in base.css.
-	 * Light source is top-left; the rim brightens again at the opposite corner
-	 * the way a real lens edge picks the light back up. */
-	--glass-rim: linear-gradient(
-		125deg,
-		rgb(255 255 255 / 0.6) 0%,
-		rgb(255 255 255 / 0.14) 32%,
-		rgb(255 255 255 / 0.06) 60%,
-		rgb(255 255 255 / 0.35) 100%
-	);
-
-	/* Inner bloom: the glass catching the sky along its top curve. */
-	--glass-bloom:
-		inset 0 1px 14px rgb(255 255 255 / 0.12), inset 0 -12px 36px rgb(255 255 255 / 0.05);
-
-	--glass-lift: 0 24px 60px -18px rgb(7 28 34 / 0.55);
-	--glass-lift-high: 0 36px 90px -20px rgb(7 28 34 / 0.65);
+	--panel-shadow: 0 1px 2px rgb(41 39 31 / 0.05), 0 10px 28px -18px rgb(41 39 31 / 0.18);
+	--panel-shadow-raised: 0 2px 4px rgb(41 39 31 / 0.06), 0 18px 44px -20px rgb(41 39 31 / 0.26);
 }

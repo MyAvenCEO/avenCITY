@@ -1,17 +1,15 @@
 /* ============================================================================
- * avenCITY — base styles + glass primitives
+ * avenCITY — base styles + atlas primitives
  * ============================================================================
- * Everything here is a component class rather than a Tailwind utility pile,
- * because the glass recipe is four properties that must travel together (see
- * the note in tokens.css). Scattering them across class attributes is how the
- * effect drifts and breaks.
+ * Component classes rather than utility piles, because each primitive is a
+ * small recipe (paper + hairline + shadow) that must travel together.
  * ========================================================================= */
 
 @layer base {
 	:root {
-		/* The identity is a night-jungle photograph; tell the browser so form
-		 * controls, scrollbars and selection follow instead of guessing. */
-		color-scheme: dark;
+		/* The board is paper; tell the browser so form controls, scrollbars and
+		 * selection follow instead of guessing. */
+		color-scheme: light;
 	}
 
 	html {
@@ -19,8 +17,8 @@
 	}
 
 	body {
-		background-color: var(--color-deep);
-		color: var(--color-chalk);
+		background-color: var(--color-paper);
+		color: var(--color-ink);
 		font-family: var(--font-sans);
 		font-size: var(--text-body);
 		line-height: var(--text-body--line-height);
@@ -29,26 +27,25 @@
 		-moz-osx-font-smoothing: grayscale;
 	}
 
-	/* Headings run LIGHT and tight. Chillax at weight 300 with negative
-	 * tracking is the house display voice; bold is reserved for the wordmark
-	 * and deliberate emphasis inside a heading. */
+	/* Headings are the atlas voice: Playfair, medium weight. The serif carries
+	 * the contrast, so no heavy weights and no tight negative tracking. */
 	h1,
 	h2,
 	h3 {
 		font-family: var(--font-display);
-		font-weight: 300;
-		letter-spacing: -0.03em;
+		font-weight: 500;
+		letter-spacing: -0.01em;
 		text-wrap: balance;
 	}
 
 	::selection {
-		background-color: var(--color-paradise);
-		color: var(--color-deep);
+		background-color: var(--color-amber-faint);
+		color: var(--color-ink);
 	}
 
-	/* One focus style everywhere — paradise, offset, never removed. */
+	/* One focus style everywhere — amber, offset, never removed. */
 	:focus-visible {
-		outline: 2px solid var(--color-paradise-bright);
+		outline: 2px solid var(--color-amber);
 		outline-offset: 3px;
 		border-radius: 4px;
 	}
@@ -66,76 +63,34 @@
 }
 
 @layer components {
-	/* --- Liquid glass panes ------------------------------------------------ */
-	/* .glass is the base pane: the five layers of the recipe (see tokens.css).
-	 * The backdrop stack is blur + saturate + BRIGHTNESS — the brightness boost
-	 * is what makes the material luminous instead of frosted mud. */
-	.glass {
-		position: relative;
-		background-color: var(--glass-tint);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
+	/* --- Panels -------------------------------------------------------------- */
+	/* The unit of the interface: brighter paper on the board, one hairline,
+	 * a shadow you cannot point at. */
+	.panel {
+		background-color: var(--color-paper-bright);
+		border: 1px solid var(--color-hairline);
 		border-radius: var(--radius-panel);
-		box-shadow: var(--glass-bloom), var(--glass-lift);
+		box-shadow: var(--panel-shadow);
 	}
 
-	/* The specular rim: a ~1px gradient stroke masked to the border ring, so
-	 * light wraps the lens edge — bright top-left, picked back up bottom-right.
-	 * This replaces the flat 1px border, which is what made panes read as
-	 * plastic boxes. pointer-events off; it is pure light. */
-	.glass::before,
-	.glass-lens::before,
-	.glass-shade::before,
-	.chip::before,
-	.btn-glass::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		padding: 1px;
-		background: var(--glass-rim);
-		-webkit-mask:
-			linear-gradient(#fff 0 0) content-box,
-			linear-gradient(#fff 0 0);
-		-webkit-mask-composite: xor;
-		mask:
-			linear-gradient(#fff 0 0) content-box,
-			linear-gradient(#fff 0 0);
-		mask-composite: exclude;
-		pointer-events: none;
+	/* Plate: a hero-scale panel (the map itself, a framed figure). Slightly
+	 * larger radius and lift; still hairlined. */
+	.plate {
+		background-color: var(--color-paper-bright);
+		border: 1px solid var(--color-hairline);
+		border-radius: var(--radius-plate);
+		box-shadow: var(--panel-shadow-raised);
 	}
 
-	/* Hero-scale pane: deeper blur, stronger presence, bigger lift. Use
-	 * sparingly — one per viewport, or the depth hierarchy flattens out. */
-	.glass-lens {
-		position: relative;
-		background-color: var(--glass-tint-strong);
-		backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		-webkit-backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		border-radius: var(--radius-lens);
-		box-shadow: var(--glass-bloom), var(--glass-lift-high);
+	/* Well: recessed paper INSIDE a panel — totals, code, create-actions. */
+	.well {
+		background-color: var(--color-paper-deep);
+		border: 1px solid var(--color-hairline);
+		border-radius: calc(var(--radius-panel) - 0.375rem);
 	}
 
-	/* Cooler pane for when text must win over a bright/busy patch of photo.
-	 * The dark tint is thin and the brightness boost stays — dimmed glass is
-	 * still glass; the moment it goes murky it is off-brand. */
-	.glass-shade {
-		position: relative;
-		background-color: var(--glass-tint-dark);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		border-radius: var(--radius-panel);
-		box-shadow: var(--glass-bloom), var(--glass-lift);
-	}
-
-	/* --- Labels ------------------------------------------------------------ */
-	/* The engineering annotation. Mono, uppercase, tracked wide. */
+	/* --- Labels ---------------------------------------------------------------- */
+	/* The engraved annotation layer. Mono, uppercase, tracked wide. */
 	.label {
 		font-family: var(--font-mono);
 		font-size: var(--text-label);
@@ -143,30 +98,35 @@
 		font-weight: 500;
 		text-transform: uppercase;
 		letter-spacing: 0.16em;
-		/* Labels are the smallest text and often sit on brightened glass or
-		 * directly on the photo; a soft ink shadow keeps them anchored without
-		 * dimming the material behind them. */
-		text-shadow: 0 1px 3px rgb(7 28 34 / 0.45);
 	}
 
-	/* A label wearing a glass chip — the "4K RESOLUTION" pill from the refs. */
+	/* Place-name pill: dark ink capsule with paper text — exactly the district
+	 * labels on the map (AVENHALL · LV. 5). */
+	.pill-ink {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.375rem 0.875rem;
+		border-radius: var(--radius-chip);
+		background-color: var(--color-ink);
+		color: var(--color-paper-bright);
+		white-space: nowrap;
+	}
+
+	/* Paper chip: hairlined capsule for resource readouts and small state. */
 	.chip {
-		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.4375rem 0.875rem;
 		border-radius: var(--radius-chip);
-		background-color: var(--glass-tint);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		color: var(--color-chalk);
+		background-color: var(--color-paper-bright);
+		border: 1px solid var(--color-hairline);
+		color: var(--color-ink);
 		white-space: nowrap;
 	}
 
-	/* --- Buttons ----------------------------------------------------------- */
+	/* --- Buttons ------------------------------------------------------------------ */
 	.btn {
 		display: inline-flex;
 		align-items: center;
@@ -184,6 +144,7 @@
 		transition:
 			background-color var(--duration-quick) var(--ease-city),
 			border-color var(--duration-quick) var(--ease-city),
+			color var(--duration-quick) var(--ease-city),
 			box-shadow var(--duration-quick) var(--ease-city),
 			transform var(--duration-quick) var(--ease-city);
 	}
@@ -192,53 +153,47 @@
 		transform: translateY(1px);
 	}
 
-	/* Primary = paradise. The water is the call to action. */
+	/* Primary = ink. The decisive stamp on the page. */
 	.btn-primary {
-		background-color: var(--color-paradise);
-		color: var(--color-deep);
-		box-shadow: 0 8px 24px -8px rgb(38 165 201 / 0.7);
+		background-color: var(--color-ink);
+		color: var(--color-paper-bright);
+		box-shadow: var(--panel-shadow);
 	}
 	.btn-primary:hover {
-		background-color: var(--color-paradise-bright);
-		box-shadow: 0 10px 30px -8px rgb(90 180 216 / 0.85);
+		background-color: #3b382e;
 	}
 
-	/* Secondary = glass. Sits on the photo without competing with primary. */
-	.btn-glass {
-		position: relative;
-		background-color: var(--glass-tint);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
-			brightness(var(--glass-brightness));
-		border: none;
-		color: var(--color-chalk);
-		box-shadow: 0 12px 32px -12px rgb(7 28 34 / 0.5);
+	/* Secondary = ruled paper. A hairlined capsule, quiet next to the stamp. */
+	.btn-line {
+		background-color: transparent;
+		border-color: var(--color-hairline);
+		color: var(--color-ink);
 	}
-	.btn-glass:hover {
-		background-color: var(--glass-tint-strong);
+	.btn-line:hover {
+		background-color: var(--color-paper-bright);
+		border-color: var(--color-ink-faint);
 	}
 
-	/* --- Live dot ----------------------------------------------------------- */
-	/* Marks anything currently happening — MAIA writing, a day in progress. */
+	/* --- Live dot -------------------------------------------------------------------- */
+	/* Marks anything ticking right now — income accruing, a season running. */
 	.pulse-dot {
 		width: 0.5rem;
 		height: 0.5rem;
 		border-radius: 999px;
-		background-color: var(--color-paradise-bright);
-		box-shadow: 0 0 0 0 rgb(90 180 216 / 0.6);
+		background-color: var(--color-amber);
+		box-shadow: 0 0 0 0 rgb(201 138 59 / 0.5);
 		animation: pulse-ring 2.4s var(--ease-city) infinite;
 	}
 
 	@keyframes pulse-ring {
 		0% {
-			box-shadow: 0 0 0 0 rgb(90 180 216 / 0.6);
+			box-shadow: 0 0 0 0 rgb(201 138 59 / 0.5);
 		}
 		70% {
-			box-shadow: 0 0 0 0.5rem rgb(90 180 216 / 0);
+			box-shadow: 0 0 0 0.5rem rgb(201 138 59 / 0);
 		}
 		100% {
-			box-shadow: 0 0 0 0 rgb(90 180 216 / 0);
+			box-shadow: 0 0 0 0 rgb(201 138 59 / 0);
 		}
 	}
 }

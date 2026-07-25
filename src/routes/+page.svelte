@@ -1,15 +1,15 @@
 <script lang="ts">
 	import Hero from '$lib/components/Hero.svelte';
-	import Manifest from '$lib/components/Manifest.svelte';
+	import Gameplay from '$lib/components/Gameplay.svelte';
 </script>
 
 <svelte:head>
-	<title>avenCITY — a city built by 1 million founders in 16 years</title>
+	<title>avenCITY — go all in on your idea, the risk stays in the game</title>
 	<meta
 		name="description"
-		content="The story of how AGI learns to build a city in 16 years. 1 million founders, first in game then in real. Documented daily by avenMAIA."
+		content="avenCITY is a founder's city simulator for the post-AGI world. Found your venture, ignite sparks, and build income streams that pay you back hour after hour."
 	/>
 </svelte:head>
 
 <Hero />
-<Manifest />
+<Gameplay />

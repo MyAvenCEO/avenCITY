@@ -1,20 +1,30 @@
 /* avenCITY typefaces — self-hosted woff2, so the site renders offline and
  * identically everywhere. No network font fetch, no third-party request.
  *
- * TWO VOICES, ON PURPOSE:
- *   Chillax    — the organic voice. Soft geometric sans with rounded terminals;
- *                it carries headlines, the wordmark and body copy. Nature, not
- *                machinery. Display sizes run Light (300); the same line in
- *                Bold (700) is how the wordmark and emphasis are built.
- *   AzeretMono — the technical voice. Monospace, used ONLY for small uppercase
- *                labels, eyebrows, spec figures and meta. It is the engineering
- *                annotation on the blueprint — 150M DIAMETER, DAY 001 / 5423.
+ * THREE VOICES:
+ *   Playfair Display — the atlas voice. High-contrast Didone serif; carries
+ *                      the wordmark and every display headline. It is what
+ *                      makes the page read as a printed atlas plate.
+ *   Chillax          — the body voice. Soft geometric sans for paragraphs and
+ *                      UI copy; warm enough to sit on paper without starching.
+ *   AzeretMono       — the ledger voice. Small uppercase labels, coordinates,
+ *                      and every game figure ($ 4,290 /h). The engraved
+ *                      annotation layer of the map.
  *
- * Never swap the two. Chillax says "this is a place"; Azeret says "these are
- * its measurements". Mixing them collapses the whole identity.
+ * Never swap them: serif says "this is the city", mono says "these are its
+ * numbers", sans carries the sentences in between.
  */
 
-/* --- Chillax: display + body ------------------------------------------- */
+/* --- Playfair Display: wordmark + display (variable, 400–700) ----------- */
+@font-face {
+	font-family: 'Playfair';
+	src: url('../assets/fonts/PlayfairDisplay-Variable.woff2') format('woff2');
+	font-weight: 400 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* --- Chillax: body ------------------------------------------------------- */
 @font-face {
 	font-family: 'Chillax';
 	src: url('../assets/fonts/Chillax-Light.woff2') format('woff2');
@@ -51,7 +61,7 @@
 	font-display: swap;
 }
 
-/* --- Azeret Mono: labels, specs, meta ----------------------------------- */
+/* --- Azeret Mono: labels, figures, meta ---------------------------------- */
 @font-face {
 	font-family: 'AzeretMono';
 	src: url('../assets/fonts/AzeretMono-ExtraLight.woff2') format('woff2');

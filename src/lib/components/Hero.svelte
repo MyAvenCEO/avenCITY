@@ -1,97 +1,118 @@
 <script lang="ts">
-	import cityDome from '$lib/assets/images/maia-city-dome.jpg';
-	import { mission, recap, links } from '$lib/brand';
+	import { tagline, pitch, resources, overview } from '$lib/brand';
 	import Wordmark from './Wordmark.svelte';
-
-	const day = String(mission.day).padStart(3, '0');
+	import cityDome from '$lib/assets/images/maia-city-dome.jpg';
 </script>
 
 <!--
-	The hero is the design system's argument in one screen: a living photograph
-	of the city, with everything we say floating on glass above it.
-
-	Two rules keep it honest, and both were learned the hard way:
-
-	1. THE CARD MUST NOT EAT THE CITY. The pane is capped at max-w-xl and sits in
-	   the left column so the dome stays visible in its own right. A glass panel
-	   that covers the photograph is just a dark box — the identity dies.
-	2. THE SCRIM IS DIAGONAL, NOT FLAT. Heaviest bottom-left under the copy,
-	   clearing to almost nothing top-right over the dome. That buys white-text
-	   contrast where the words are without dimming the subject.
+	The hero is an editorial atlas spread: huge serif headline with an inline
+	amber glyph (the magazine trick), an arch-framed plate of a dome district
+	(the botanical-plate arch from the refs), sparkle ornaments, and one thin
+	amber route-line flowing through the composition. Below, the resource
+	ledger grounds it all in the game's economy.
 -->
-<section class="relative isolate flex min-h-svh flex-col overflow-hidden">
-	<img
-		src={cityDome}
-		alt="Maia City — a geodesic glass dome set in jungle above a turquoise paradise"
-		class="absolute inset-0 -z-20 h-full w-full transform-gpu object-cover object-[38%_center]"
-		fetchpriority="high"
-	/>
-	<div
-		class="absolute inset-0 -z-10 bg-gradient-to-tr from-deep/80 via-deep/25 to-transparent"
-	></div>
-	<div class="absolute inset-0 -z-10 bg-gradient-to-t from-deep/60 to-transparent"></div>
-	<!-- Targeted bands, not a heavier global scrim. The nav and the sponsor line
-	     are the only text without a glass pane behind them, and the diagonal
-	     above clears to nothing exactly where the nav sits (top right, over
-	     bright sky). These two strips buy those bands their contrast back while
-	     leaving the middle of the render untouched. -->
-	<div
-		class="absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-b from-deep/55 to-transparent"
-	></div>
+<section class="relative overflow-hidden">
+	<!-- The route-line: one thin amber curve, as drawn on the map. Decorative,
+	     desktop only — on mobile it would crowd the type. -->
+	<svg
+		class="pointer-events-none absolute inset-0 hidden h-full w-full lg:block"
+		viewBox="0 0 1200 800"
+		fill="none"
+		preserveAspectRatio="xMidYMid slice"
+		aria-hidden="true"
+	>
+		<path
+			d="M -40 620 C 240 560, 400 640, 620 520 S 980 260, 1240 300"
+			stroke="var(--color-amber)"
+			stroke-width="1.5"
+			stroke-dasharray="1 0"
+			opacity="0.55"
+		/>
+		<path
+			d="M -40 660 C 260 620, 460 700, 700 580"
+			stroke="var(--color-amber)"
+			stroke-width="1"
+			stroke-dasharray="4 6"
+			opacity="0.35"
+		/>
+	</svg>
 
-	<!-- Nav -->
-	<header class="relative flex items-center justify-between gap-4 px-6 py-6 md:px-12">
-		<Wordmark class="text-2xl text-chalk" />
-		<nav class="flex items-center gap-3">
-			<!-- Hidden on phones: at 375px the wordmark, this link and the day chip
-			     fight for the same row and the link wraps to two lines. -->
-			<a
-				href="/style"
-				class="label hidden text-chalk-muted transition-colors hover:text-paradise-bright sm:inline"
-			>
-				Design system
-			</a>
-			<div class="chip label">
-				<span class="pulse-dot" aria-hidden="true"></span>
-				Day {day} / {mission.totalDays}
+	<div class="relative mx-auto max-w-6xl px-6 pt-10 pb-16 md:px-12 md:pb-24">
+		<!-- Top bar: wordmark + season chip, like the game's header -->
+		<header class="flex flex-wrap items-center justify-between gap-4">
+			<div>
+				<Wordmark class="text-3xl" />
+				<p class="label mt-2 text-ink-faint">{tagline}</p>
 			</div>
-		</nav>
-	</header>
+			<div class="flex items-center gap-3">
+				<a href="/style" class="label text-ink-soft transition-colors hover:text-amber-deep">
+					Design system
+				</a>
+				<span class="chip label">
+					<span class="pulse-dot" aria-hidden="true"></span>
+					Year {overview.year} · {overview.season}
+				</span>
+			</div>
+		</header>
 
-	<!-- The glass lens -->
-	<div class="relative flex flex-1 items-center px-6 py-10 md:px-12">
-		<div class="glass-lens w-full max-w-xl p-8 md:p-10">
-			<p class="label text-paradise-bright">The 5423-day challenge</p>
-
-			<!-- Weight alternation is the house display rhythm: light lines carry
-			     the sentence, the bold line carries the claim. -->
-			<h1 class="mt-5 text-hero text-chalk">
-				<span class="block font-light">A city built by</span>
-				<span class="block font-bold">1 million founders</span>
-				<span class="block font-light">in {mission.years} years.</span>
-			</h1>
-
-			<!-- The recap stanza: verbatim, every time. The zero-background on-ramp. -->
-			<div class="mt-7 border-l-2 border-paradise/70 pl-5 font-light text-chalk-muted">
-				{#each recap as line}
-					<p class="text-lead">{line}</p>
-				{/each}
-				<p class="mt-3 font-medium text-paradise-bright">
-					I am avenMAIA, and this is day {mission.day} of {mission.totalDays}.
+		<!-- Editorial spread: headline left, arch plate right -->
+		<div class="mt-16 grid items-center gap-12 md:mt-20 lg:grid-cols-[1fr_minmax(300px,380px)]">
+			<div class="relative">
+				<span
+					class="pointer-events-none absolute -top-10 right-8 hidden font-display text-2xl text-ink lg:block"
+					aria-hidden="true">✦</span
+				>
+				<p class="label text-amber-deep">The founder's city simulator</p>
+				<h1 class="mt-5 text-hero">
+					Go all in <span class="align-middle text-[0.55em] text-amber" aria-hidden="true"
+						>✦</span
+					> on your idea.<br />
+					<em class="font-display italic">The risk stays in the game.</em>
+				</h1>
+				<p class="mt-7 max-w-xl text-lead font-light text-ink-soft">
+					{pitch}
 				</p>
+				<div class="mt-9 flex flex-wrap items-center gap-3">
+					<a href="#gameplay" class="btn btn-primary">Found your venture</a>
+					<a href="#streams" class="btn btn-line">See the income streams</a>
+				</div>
 			</div>
 
-			<div class="mt-8 flex flex-wrap items-center gap-3">
-				<a href="#story" class="btn btn-primary">Read day {day}</a>
-				<a href={links.sponsor} class="btn btn-glass">Get your Aven Founder</a>
-			</div>
+			<!-- The arch plate: a district framed like a figure in an old atlas -->
+			<figure class="relative mx-auto w-full max-w-[380px]">
+				<div
+					class="overflow-hidden rounded-t-full rounded-b-[var(--radius-panel)] border border-hairline shadow-[var(--panel-shadow-raised)]"
+				>
+					<img
+						src={cityDome}
+						alt="A glass dome district above a turquoise river"
+						class="aspect-[3/4] w-full object-cover object-[46%_center] [filter:sepia(0.14)_saturate(0.9)]"
+						fetchpriority="high"
+					/>
+				</div>
+				<span
+					class="pointer-events-none absolute -top-3 -right-4 font-display text-xl text-amber"
+					aria-hidden="true">✦</span
+				>
+				<figcaption
+					class="pill-ink label absolute bottom-5 left-1/2 -translate-x-1/2 shadow-[var(--panel-shadow)]"
+				>
+					Avenhall · LV. 5
+				</figcaption>
+			</figure>
+		</div>
+
+		<!-- Resource ledger: the game's top bar as a ruled paper strip -->
+		<div class="panel relative mt-16 md:mt-20">
+			<dl class="grid grid-cols-2 divide-hairline sm:grid-cols-3 lg:grid-cols-5 lg:divide-x">
+				{#each resources as r}
+					<div class="px-6 py-5">
+						<dt class="label text-ink-faint">{r.label}</dt>
+						<dd class="mt-2 font-mono text-title font-medium text-ink">{r.value}</dd>
+						<dd class="mt-1 font-mono text-meta text-ok">{r.rate}</dd>
+					</div>
+				{/each}
+			</dl>
 		</div>
 	</div>
-
-	<footer class="relative px-6 pb-8 md:px-12">
-		<p class="label text-chalk-faint">
-			This journey is sponsored by avenCEO — get your own Aven Founder now →
-			<a href={links.sponsor} class="text-paradise-bright hover:text-paradise">aven.ceo/maia</a>
-		</p>
-	</footer>
 </section>
