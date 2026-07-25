@@ -66,40 +66,72 @@
 }
 
 @layer components {
-	/* --- Glass panes ------------------------------------------------------- */
-	/* .glass is the base pane. The four layers of the recipe, together. */
+	/* --- Liquid glass panes ------------------------------------------------ */
+	/* .glass is the base pane: the five layers of the recipe (see tokens.css).
+	 * The backdrop stack is blur + saturate + BRIGHTNESS — the brightness boost
+	 * is what makes the material luminous instead of frosted mud. */
 	.glass {
 		position: relative;
 		background-color: var(--glass-tint);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		border: 1px solid var(--glass-edge);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
 		border-radius: var(--radius-panel);
-		box-shadow: var(--glass-highlight), var(--glass-lift);
+		box-shadow: var(--glass-bloom), var(--glass-lift);
 	}
 
-	/* Hero-scale pane: deeper blur, stronger edge, bigger lift. Use sparingly —
-	 * one per viewport, or the depth hierarchy flattens out. */
+	/* The specular rim: a ~1px gradient stroke masked to the border ring, so
+	 * light wraps the lens edge — bright top-left, picked back up bottom-right.
+	 * This replaces the flat 1px border, which is what made panes read as
+	 * plastic boxes. pointer-events off; it is pure light. */
+	.glass::before,
+	.glass-lens::before,
+	.glass-shade::before,
+	.chip::before,
+	.btn-glass::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		padding: 1px;
+		background: var(--glass-rim);
+		-webkit-mask:
+			linear-gradient(#fff 0 0) content-box,
+			linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask:
+			linear-gradient(#fff 0 0) content-box,
+			linear-gradient(#fff 0 0);
+		mask-composite: exclude;
+		pointer-events: none;
+	}
+
+	/* Hero-scale pane: deeper blur, stronger presence, bigger lift. Use
+	 * sparingly — one per viewport, or the depth hierarchy flattens out. */
 	.glass-lens {
 		position: relative;
 		background-color: var(--glass-tint-strong);
-		backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate));
-		-webkit-backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate));
-		border: 1px solid var(--glass-edge-strong);
+		backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
+		-webkit-backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
 		border-radius: var(--radius-lens);
-		box-shadow: var(--glass-highlight), var(--glass-lift-high);
+		box-shadow: var(--glass-bloom), var(--glass-lift-high);
 	}
 
-	/* Darker pane for when text must win over a bright/busy part of the photo.
-	 * Still translucent — the jungle must stay visible. */
+	/* Cooler pane for when text must win over a bright/busy patch of photo.
+	 * The dark tint is thin and the brightness boost stays — dimmed glass is
+	 * still glass; the moment it goes murky it is off-brand. */
 	.glass-shade {
 		position: relative;
 		background-color: var(--glass-tint-dark);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		border: 1px solid var(--glass-edge);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
 		border-radius: var(--radius-panel);
-		box-shadow: var(--glass-highlight), var(--glass-lift);
+		box-shadow: var(--glass-bloom), var(--glass-lift);
 	}
 
 	/* --- Labels ------------------------------------------------------------ */
@@ -111,20 +143,25 @@
 		font-weight: 500;
 		text-transform: uppercase;
 		letter-spacing: 0.16em;
+		/* Labels are the smallest text and often sit on brightened glass or
+		 * directly on the photo; a soft ink shadow keeps them anchored without
+		 * dimming the material behind them. */
+		text-shadow: 0 1px 3px rgb(7 28 34 / 0.45);
 	}
 
 	/* A label wearing a glass chip — the "4K RESOLUTION" pill from the refs. */
 	.chip {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.4375rem 0.875rem;
 		border-radius: var(--radius-chip);
 		background-color: var(--glass-tint);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		border: 1px solid var(--glass-edge);
-		box-shadow: var(--glass-highlight);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
 		color: var(--color-chalk);
 		white-space: nowrap;
 	}
@@ -168,16 +205,18 @@
 
 	/* Secondary = glass. Sits on the photo without competing with primary. */
 	.btn-glass {
+		position: relative;
 		background-color: var(--glass-tint);
-		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-		border-color: var(--glass-edge);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate))
+			brightness(var(--glass-brightness));
+		border: none;
 		color: var(--color-chalk);
-		box-shadow: var(--glass-highlight), var(--glass-lift);
+		box-shadow: 0 12px 32px -12px rgb(7 28 34 / 0.5);
 	}
 	.btn-glass:hover {
 		background-color: var(--glass-tint-strong);
-		border-color: var(--glass-edge-strong);
 	}
 
 	/* --- Live dot ----------------------------------------------------------- */

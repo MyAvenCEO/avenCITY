@@ -75,22 +75,26 @@ are fixed so the rhythm never wobbles between breakpoints.
 
 Labels are always uppercase, mono, tracked to `0.16em`.
 
-## Glass
+## Liquid glass
 
-A convincing pane needs **four layers together**. Drop any one and it becomes a
-grey box — this is what most "glassmorphism" gets wrong:
+The material follows Apple's Liquid Glass: **luminous, never murky** — a lens
+that gathers light, not a frosted slab that eats it. Five layers together; drop
+any one and it collapses into a grey box:
 
-1. **Tint** — a barely-there wash so text has something to sit on.
-2. **Blur** — `backdrop-filter`, plus `saturate()` so the jungle stays vivid
-   behind it instead of going muddy grey.
-3. **Hairline** — a light 1px border. Glass has an edge.
-4. **Highlight** — an inset top gleam, the light catching the top curve.
+1. **Tint** — a neutral white wash. Never a colour; a tinted tint is soup.
+2. **Backdrop** — `blur()` + `saturate()` + **`brightness()`**. The brightness
+   boost is the difference between liquid glass and mud.
+3. **Specular rim** — a ~1px *gradient* stroke (masked pseudo-element), bright
+   top-left, fading, picked back up bottom-right — light wrapping a lens edge.
+   A flat 1px border is exactly what it must not be.
+4. **Bloom** — a soft inner light along the top curve, the glass catching sky.
+5. **Lift** — a deep soft drop shadow; the pane floats, it isn't cut in.
 
 | Class | Use |
 | --- | --- |
-| `.glass` | The default pane. Cards and most content. |
-| `.glass-lens` | Hero scale — deeper blur, stronger edge, bigger lift. **One per viewport**, or the depth hierarchy flattens. |
-| `.glass-shade` | Darker tint for when text must win over a bright patch of photograph. Still translucent. |
+| `.glass` | The default pane. 28px blur. Cards and most content. |
+| `.glass-lens` | Hero scale — 44px blur, stronger tint, bigger lift. **One per viewport**, or the depth hierarchy flattens. |
+| `.glass-shade` | Dimmed glass for text over a bright patch of photograph. Same brightness boost — dimmed glass is still glass. |
 
 ### Two hard-won layout rules
 

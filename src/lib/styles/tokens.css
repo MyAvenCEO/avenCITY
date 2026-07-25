@@ -94,10 +94,12 @@
 	--text-label--line-height: 1.4;
 
 	/* --- Geometry ------------------------------------------------------------ */
-	/* Glass wants generous, liquid corners — a hard 4px edge reads as plastic. */
+	/* Glass wants generous, liquid corners — a hard 4px edge reads as plastic.
+	 * Liquid-glass radii run larger than typical cards; the curve is where the
+	 * specular rim lives, so it needs room to sweep. */
 	--radius-chip: 999px;
-	--radius-panel: 1.25rem;
-	--radius-lens: 2rem;
+	--radius-panel: 1.75rem;
+	--radius-lens: 2.5rem;
 
 	/* --- Motion -------------------------------------------------------------- */
 	/* One curve. Glass should settle, not snap. */
@@ -107,37 +109,48 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Glass recipe
+ * Liquid Glass recipe (Apple-style)
  * ---------------------------------------------------------------------------
  * Compositions, not scale steps, so they live outside @theme and are consumed
  * by the .glass-* classes in base.css.
  *
- * A convincing pane needs FOUR layers, and dropping any one is what makes most
- * "glassmorphism" look like a grey box:
- *   1. tint      — a barely-there wash so text has something to sit on
- *   2. blur      — backdrop-filter, plus saturate() to keep the landscape vivid
- *                  behind it instead of going muddy
- *   3. hairline  — a light 1px border; glass has an EDGE
- *   4. highlight — an inset top gleam, the light catching the top curve
- *
- * The tints are NEUTRAL WHITE, never green. A tinted tint is what turned the
- * whole first pass into soup.
+ * The defining property of Apple's Liquid Glass is that it is LUMINOUS, never
+ * murky: the material reads as a lens that gathers light, not a frosted slab
+ * that eats it. Five layers, together:
+ *   1. tint       — neutral white wash (never a colour; a tinted tint is soup)
+ *   2. backdrop   — heavy blur + saturate() + brightness(). The brightness
+ *                   boost is the difference between liquid glass and mud.
+ *   3. specular   — a ~1px GRADIENT rim, bright top-left fading out and
+ *                   returning bottom-right, like light wrapping a lens edge.
+ *                   A flat 1px border is exactly what it must not be.
+ *   4. bloom      — a soft inner light along the top, the glass catching sky
+ *   5. lift       — a deep soft drop shadow; the pane floats, it isn't cut in
  * ------------------------------------------------------------------------ */
 :root {
-	--glass-tint: rgb(255 255 255 / 0.1);
-	--glass-tint-strong: rgb(255 255 255 / 0.15);
-	--glass-tint-dark: rgb(7 28 34 / 0.38);
+	--glass-tint: rgb(255 255 255 / 0.12);
+	--glass-tint-strong: rgb(255 255 255 / 0.18);
+	--glass-tint-dark: rgb(10 30 38 / 0.26);
 
-	--glass-edge: rgb(255 255 255 / 0.26);
-	--glass-edge-strong: rgb(255 255 255 / 0.42);
+	--glass-blur: 28px;
+	--glass-blur-deep: 44px;
+	--glass-saturate: 1.8;
+	--glass-brightness: 1.15;
 
-	--glass-blur: 20px;
-	--glass-blur-deep: 36px;
-	--glass-saturate: 1.5;
+	/* Specular rim — rendered as a masked gradient stroke in base.css.
+	 * Light source is top-left; the rim brightens again at the opposite corner
+	 * the way a real lens edge picks the light back up. */
+	--glass-rim: linear-gradient(
+		125deg,
+		rgb(255 255 255 / 0.6) 0%,
+		rgb(255 255 255 / 0.14) 32%,
+		rgb(255 255 255 / 0.06) 60%,
+		rgb(255 255 255 / 0.35) 100%
+	);
 
-	/* Inset gleam along the top edge + a soft drop so the pane reads as floating
-	 * above the photograph rather than cut into it. */
-	--glass-highlight: inset 0 1px 0 0 rgb(255 255 255 / 0.34);
-	--glass-lift: 0 1px 2px rgb(7 28 34 / 0.18), 0 12px 32px -8px rgb(7 28 34 / 0.44);
-	--glass-lift-high: 0 2px 4px rgb(7 28 34 / 0.2), 0 28px 64px -12px rgb(7 28 34 / 0.58);
+	/* Inner bloom: the glass catching the sky along its top curve. */
+	--glass-bloom:
+		inset 0 1px 14px rgb(255 255 255 / 0.12), inset 0 -12px 36px rgb(255 255 255 / 0.05);
+
+	--glass-lift: 0 24px 60px -18px rgb(7 28 34 / 0.55);
+	--glass-lift-high: 0 36px 90px -20px rgb(7 28 34 / 0.65);
 }

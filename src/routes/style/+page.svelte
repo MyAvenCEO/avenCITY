@@ -181,32 +181,33 @@
 
 		<!-- Glass -->
 		<section class="mt-20">
-			<h2 class="label text-paradise-bright">03 — Glass</h2>
+			<h2 class="label text-paradise-bright">03 — Liquid glass</h2>
 			<p class="mt-4 max-w-2xl text-body text-chalk-muted">
-				A convincing pane needs four layers together — tint, blurred and saturated backdrop,
-				a light hairline edge, and an inset top gleam. Drop any one and it becomes a grey
-				box. Opaque surfaces are off-brand: the jungle must keep showing through whatever we
-				build on it.
+				The material is luminous, never murky — a lens that gathers light, not a frosted
+				slab that eats it. Five layers together: a neutral tint, a backdrop that is blurred,
+				saturated <em>and brightened</em>, a gradient specular rim that wraps the edge like
+				light on a lens, an inner bloom along the top, and a deep soft lift. The brightness
+				boost is the difference between liquid glass and mud.
 			</p>
 			<div class="mt-8 grid gap-6 md:grid-cols-3">
 				<div class="glass p-8">
 					<p class="label text-paradise-bright">.glass</p>
 					<p class="mt-3 text-body text-chalk-muted">
-						The default pane. 20px blur, subtle tint. Use for cards and most content.
+						The default pane. 28px blur, brightness 1.15. Use for cards and most content.
 					</p>
 				</div>
 				<div class="glass-lens p-8">
 					<p class="label text-paradise-bright">.glass-lens</p>
 					<p class="mt-3 text-body text-chalk-muted">
-						Hero scale — deeper blur, stronger edge, bigger lift. One per viewport, or
-						the depth hierarchy flattens.
+						Hero scale — 44px blur, stronger tint, bigger lift. One per viewport, or the
+						depth hierarchy flattens.
 					</p>
 				</div>
 				<div class="glass-shade p-8">
 					<p class="label text-paradise-bright">.glass-shade</p>
 					<p class="mt-3 text-body text-chalk-muted">
-						Darker tint for when text must win over a bright patch of photograph. Still
-						translucent.
+						Dimmed glass for text over a bright patch of photograph — still lit by the
+						same brightness boost, never murky.
 					</p>
 				</div>
 			</div>
