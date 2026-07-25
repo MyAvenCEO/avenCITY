@@ -100,15 +100,27 @@ interface RegionCenter {
 	q: number;
 	r: number;
 	biome: BiomeId;
+	/** weighted Voronoi: larger weight -> larger patch. Many sizes per biome. */
+	weight: number;
 }
 
-/** Scatter region centers over the blob, spaced apart, exactly one RIVER. */
-function placeRegions(rng: ReturnType<typeof makeRng>, cells: Array<[number, number]>): RegionCenter[] {
-	const count = rng.int(4, 6);
-	// exactly one water region; land biomes fill the rest (all appear once
-	// before repeats, so every world has variety)
+/**
+ * Scatter region centers over the blob. Every land biome appears at least
+ * twice and up to several times, each with a random weight — so the same
+ * biome recurs across the island in patches of very different sizes.
+ * Water gets 1-2 centers (the largest-component pass keeps one body), and
+ * its centers prefer INTERIOR cells so lakes form away from the coast.
+ */
+function placeRegions(
+	rng: ReturnType<typeof makeRng>,
+	cells: Array<[number, number]>,
+	interior: Array<[number, number]>
+): RegionCenter[] {
+	const count = rng.int(10, 13);
 	const land: BiomeId[] = ['FOREST', 'MOUNTAIN', 'MEADOW', 'DUNES'];
-	const biomes: BiomeId[] = ['RIVER', ...land];
+	// every land biome twice, water once or twice, random repeats fill up
+	const biomes: BiomeId[] = [...land, ...land, 'RIVER'];
+	if (rng.chance(0.5)) biomes.push('RIVER');
 	while (biomes.length < count) biomes.push(land[rng.int(0, land.length - 1)]);
 	for (let i = biomes.length - 1; i > 0; i--) {
 		const j = rng.int(0, i);
@@ -117,43 +129,68 @@ function placeRegions(rng: ReturnType<typeof makeRng>, cells: Array<[number, num
 
 	const centers: RegionCenter[] = [];
 	for (const biome of biomes.slice(0, count)) {
-		let best: [number, number] = rng.pick(cells);
-		for (let attempt = 0; attempt < 12; attempt++) {
-			const candidate = rng.pick(cells);
+		const pool = biome === 'RIVER' && interior.length > 0 ? interior : cells;
+		let best: [number, number] = rng.pick(pool);
+		for (let attempt = 0; attempt < 16; attempt++) {
+			const candidate = rng.pick(pool);
 			const minDist = Math.min(
 				Infinity,
 				...centers.map((c) => axialDistance(candidate[0], candidate[1], c.q, c.r))
 			);
-			if (minDist >= 3) {
-				best = candidate;
-				break;
-			}
 			best = candidate;
+			if (minDist >= 3) break;
 		}
-		centers.push({ q: best[0], r: best[1], biome });
+		centers.push({ q: best[0], r: best[1], biome, weight: rng.range(0.7, 1.6) });
 	}
 	return centers;
 }
 
-export function generateMap(seed: number, size = 40): HexWorld {
+export function generateMap(seed: number, size = 120): HexWorld {
 	const rng = makeRng(seed);
 	const cells = growBlob(seed, size);
 	const landSet = new Set(cells.map(([q, r]) => key(q, r)));
-	const centers = placeRegions(rng, cells);
+	// interior = all 6 neighbours are land (not on the coast)
+	const isInterior = ([q, r]: [number, number]) =>
+		AXIAL_DIRS.every(([dq, dr]) => landSet.has(key(q + dq, r + dr)));
+	const interior = cells.filter(isInterior);
+	const centers = placeRegions(rng, cells, interior);
 
-	// --- assign biomes via low-jitter Voronoi (big coherent clusters) -------
+	// --- assign biomes via weighted low-jitter Voronoi (coherent clusters
+	//     of many different sizes) -------------------------------------------
 	const assignments = new Map<string, { primary: RegionCenter; secondary?: RegionCenter }>();
 	for (const [q, r] of cells) {
 		const tileRng = makeRng(hash2(q, r, seed ^ 0x77));
 		const ranked = centers
-			.map((c) => ({ c, d: axialDistance(q, r, c.q, c.r) + tileRng.range(-0.15, 0.15) }))
+			.map((c) => ({
+				c,
+				d: (axialDistance(q, r, c.q, c.r) + tileRng.range(-0.15, 0.15)) / c.weight
+			}))
 			.sort((a, b) => a.d - b.d);
 		const first = ranked[0];
 		const second = ranked.find((e) => e.c.biome !== first.c.biome);
 		assignments.set(key(q, r), {
 			primary: first.c,
-			secondary: second && second.d - first.d < 0.9 ? second.c : undefined
+			secondary: second && second.d - first.d < 0.7 ? second.c : undefined
 		});
+	}
+
+	// --- lakes never touch the sea: strip water (primary AND secondary)
+	//     from coastal tiles, so every lake keeps a ring of land around it --
+	const coastal = (q: number, r: number) => !isInterior([q, r]);
+	for (const [q, r] of cells) {
+		const a = assignments.get(key(q, r))!;
+		if (!coastal(q, r)) continue;
+		if (a.secondary?.biome === 'RIVER') a.secondary = undefined;
+		if (a.primary.biome === 'RIVER') {
+			const dry = centers
+				.filter((c) => c.biome !== 'RIVER')
+				.sort(
+					(x, y) =>
+						axialDistance(q, r, x.q, x.r) / x.weight -
+						axialDistance(q, r, y.q, y.r) / y.weight
+				)[0];
+			assignments.set(key(q, r), { primary: dry });
+		}
 	}
 
 	// --- water must be ONE body: keep the largest connected RIVER component -
@@ -191,6 +228,25 @@ export function generateMap(seed: number, size = 40): HexWorld {
 					(a, b) => axialDistance(q, r, a.q, a.r) - axialDistance(q, r, b.q, b.r)
 				)[0];
 			assignments.set(key(q, r), { primary: dry });
+		}
+	}
+
+	// --- guarantee a lake: if coastal stripping ate all water, carve a small
+	//     one at an interior spot near a river center -------------------------
+	if (components.length === 0 || components[0].every(([q, r]) => !isWater(q, r))) {
+		const riverCenter = centers.find((c) => c.biome === 'RIVER');
+		if (riverCenter && interior.length > 0) {
+			const spot = [...interior].sort(
+				(a, b) =>
+					axialDistance(a[0], a[1], riverCenter.q, riverCenter.r) -
+					axialDistance(b[0], b[1], riverCenter.q, riverCenter.r)
+			)[0];
+			const lake: Array<[number, number]> = [spot];
+			for (const [dq, dr] of AXIAL_DIRS) {
+				const n: [number, number] = [spot[0] + dq, spot[1] + dr];
+				if (interior.some(([q, r]) => q === n[0] && r === n[1]) && lake.length < 3) lake.push(n);
+			}
+			for (const [q, r] of lake) assignments.set(key(q, r), { primary: riverCenter });
 		}
 	}
 

@@ -73,33 +73,33 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(SKY);
-	scene.fog = new THREE.Fog(SKY, 55, 110);
+	scene.fog = new THREE.Fog(SKY, 80, 160);
 
-	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 220);
-	camera.position.set(14, 16, 20);
+	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 320);
+	camera.position.set(22, 24, 30);
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.08;
 	controls.minDistance = 8;
-	controls.maxDistance = 60;
+	controls.maxDistance = 90;
 	controls.maxPolarAngle = Math.PI * 0.46;
 
 	scene.add(new THREE.HemisphereLight('#eaf6ff', '#d8c9a8', 0.95));
 	const sun = new THREE.DirectionalLight('#fff2dd', 2.1);
-	sun.position.set(16, 24, 10);
+	sun.position.set(26, 38, 16);
 	sun.castShadow = true;
 	sun.shadow.mapSize.set(2048, 2048);
-	sun.shadow.camera.left = -22;
-	sun.shadow.camera.right = 22;
-	sun.shadow.camera.top = 22;
-	sun.shadow.camera.bottom = -22;
-	sun.shadow.camera.far = 70;
+	sun.shadow.camera.left = -36;
+	sun.shadow.camera.right = 36;
+	sun.shadow.camera.top = 36;
+	sun.shadow.camera.bottom = -36;
+	sun.shadow.camera.far = 110;
 	sun.shadow.bias = -0.0004;
 	scene.add(sun);
 
 	const sea = new THREE.Mesh(
-		new THREE.CylinderGeometry(70, 70, 0.6, 64),
+		new THREE.CylinderGeometry(110, 110, 0.6, 64),
 		new THREE.MeshStandardMaterial({ color: SEA, roughness: 0.6, metalness: 0 })
 	);
 	sea.position.y = -0.31;
