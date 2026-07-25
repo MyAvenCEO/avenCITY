@@ -29,6 +29,11 @@ import {
 	cactus,
 	cairn,
 	clayBoulder,
+	fallenLog,
+	grassBlades,
+	pineTall,
+	slabRock,
+	stonePile,
 	clayChunks,
 	clayTerrace,
 	crystal,
@@ -72,37 +77,47 @@ interface BiomeSpec {
 
 const BIOMES: Record<BiomeId, BiomeSpec> = {
 	LAKE: {
-		top: '#54c6dc',
+		// v2 — sweet water from the low-poly refs: pale calm blue, faceted
+		// lily pads with pale blossoms, chunky cattails.
+		top: '#6fb9c9',
 		density: [2, 4],
 		deco: (rng) =>
 			rng.chance(0.5) ? lilyPad(rng) : rng.chance(0.55) ? reeds(rng) : pebble(rng)
 	},
 	CLAYPIT: {
-		// v2 — faceted low-poly art direction (first biome on the new style):
-		// terraced dig mounds, crumpled terracotta boulders, raw clay chunks
-		// (the resource, unmistakably) and scorched dead trees.
+		// v2 — faceted low-poly: terraced dig mounds, crumpled terracotta
+		// boulders, raw clay chunks, scorched dead trees. Sparse (a pit is
+		// mostly open ground) and at half scale so the hexagon reads large.
 		top: '#d69c66',
-		density: [5, 8],
-		deco: (rng) =>
-			rng.chance(0.32)
-				? clayTerrace(rng)
-				: rng.chance(0.38)
-					? clayBoulder(rng)
-					: rng.chance(0.55)
-						? clayChunks(rng)
-						: deadTree(rng)
+		density: [1, 2],
+		deco: (rng) => {
+			const d =
+				rng.chance(0.32)
+					? clayTerrace(rng)
+					: rng.chance(0.38)
+						? clayBoulder(rng)
+						: rng.chance(0.55)
+							? clayChunks(rng)
+							: deadTree(rng);
+			d.scale.multiplyScalar(0.5);
+			return d;
+		}
 	},
 	FOREST: {
-		top: '#77bd62',
-		density: [12, 22],
+		// v2 — the POLYGON-forest look: tall tiered pines, mossy fallen logs,
+		// stratified slab rocks, stone piles and chunky grass blades.
+		top: '#6cb254',
+		density: [12, 20],
 		deco: (rng) =>
-			rng.chance(0.3)
-				? bush(rng)
-				: rng.chance(0.12)
-					? berryBush(rng)
-					: rng.chance(0.55)
-						? pine(rng)
-						: blobTree(rng)
+			rng.chance(0.52)
+				? pineTall(rng)
+				: rng.chance(0.3)
+					? grassBlades(rng)
+					: rng.chance(0.35)
+						? fallenLog(rng)
+						: rng.chance(0.55)
+							? slabRock(rng)
+							: stonePile(rng)
 	},
 	GROVE: {
 		top: '#8ecb84',
@@ -269,7 +284,7 @@ function buildStyles(world: HexWorld): Map<string, TileStyle> {
  */
 function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Color) {
 	const scratch = new THREE.Color();
-	const waterColor = new THREE.Color('#4ec0d6');
+	const waterColor = new THREE.Color('#5fb7c9');
 	return (tile: HexTile, wx: number, wz: number, out: THREE.Color): void => {
 		let sumW = 0;
 		let water = 0;

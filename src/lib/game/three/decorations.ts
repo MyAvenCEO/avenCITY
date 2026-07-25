@@ -370,14 +370,14 @@ export function reeds(rng: Rng): THREE.Group {
 	const n = rng.int(4, 7);
 	for (let i = 0; i < n; i++) {
 		const h = rng.range(0.24, 0.42);
-		const stem = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.011, h, 5), clay(jitterColor(rng, '#9cb86a'))));
+		const stem = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.014, h, 4), facet(jitterColor(rng, '#6fae53', 0.012, 0.06, 0.05))));
 		const px = rng.jitter(0, 0.09);
 		const pz = rng.jitter(0, 0.09);
 		stem.position.set(px, h / 2, pz);
 		stem.rotation.z = rng.jitter(0, 0.12);
 		g.add(stem);
 		if (rng.chance(0.7)) {
-			const head = shadow(new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.05, 3, 6), clay('#8a6432')));
+			const head = shadow(new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.07, 2, 5), facet('#8a5a2e')));
 			head.position.set(px + stem.rotation.z * -h * 0.5, h + 0.03, pz);
 			g.add(head);
 		}
@@ -390,13 +390,14 @@ export function lilyPad(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
 	const n = rng.int(1, 3);
 	for (let i = 0; i < n; i++) {
+		const pr = rng.range(0.09, 0.16);
 		const pad = shadow(
-			new THREE.Mesh(new THREE.CylinderGeometry(rng.range(0.07, 0.12), rng.range(0.07, 0.12), 0.012, 9), clay(jitterColor(rng, '#6fae62')))
+			new THREE.Mesh(new THREE.CylinderGeometry(pr, pr, 0.014, 7), facet(jitterColor(rng, '#4f9c50', 0.012, 0.06, 0.05)))
 		);
 		pad.position.set(rng.jitter(0, 0.14), 0.008, rng.jitter(0, 0.14));
 		g.add(pad);
 		if (rng.chance(0.35)) {
-			const bloom = shadow(new THREE.Mesh(new THREE.IcosahedronGeometry(0.032, 1), clay('#f2b8c6')));
+			const bloom = shadow(new THREE.Mesh(new THREE.IcosahedronGeometry(0.04, 0), facet(rng.chance(0.6) ? '#f5f0e6' : '#f2b8c6')));
 			bloom.position.copy(pad.position).setY(0.04);
 			g.add(bloom);
 		}
@@ -568,6 +569,184 @@ export function deadTree(rng: Rng): THREE.Group {
 		g.add(br);
 	}
 	g.scale.setScalar(rng.range(0.8, 1.2));
+	return g;
+}
+
+/* --- FOREST v2 (faceted) -------------------------------------------------- */
+
+const PINE_GREENS = ['#2e6b45', '#3f8a58', '#4f9c63', '#57a86b'];
+const BARK = '#a8734a';
+
+/** Tall tiered pine — the POLYGON-forest silhouette: long stub-branched
+ * trunk, 5-7 jagged foliage skirts in alternating greens, a spired top. */
+export function pineTall(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const h = rng.range(2.2, 3.3);
+	const barkCol = jitterColor(rng, BARK, 0.008, 0.05, 0.05);
+
+	const trunk = shadow(
+		new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.1, h * 0.92, 6), facet(barkCol))
+	);
+	trunk.position.y = h * 0.46;
+	g.add(trunk);
+
+	// stub branches poking through the canopy
+	const stubs = rng.int(4, 8);
+	for (let i = 0; i < stubs; i++) {
+		const stub = shadow(
+			new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, rng.range(0.12, 0.24), 4), facet(barkCol))
+		);
+		const a = rng.range(0, Math.PI * 2);
+		const sy = h * rng.range(0.25, 0.85);
+		stub.position.set(Math.cos(a) * 0.09, sy, Math.sin(a) * 0.09);
+		stub.rotation.z = Math.cos(a) * (1.2 + rng.jitter(0, 0.3));
+		stub.rotation.x = -Math.sin(a) * (1.2 + rng.jitter(0, 0.3));
+		g.add(stub);
+	}
+
+	// jagged foliage skirts
+	const tiers = rng.int(5, 7);
+	const y0 = h * 0.34;
+	for (let i = 0; i < tiers; i++) {
+		const t = i / (tiers - 1);
+		const R = (0.72 - 0.5 * t) * rng.range(0.85, 1.15);
+		const tierH = h * 0.15;
+		const geo = displaceGeo(new THREE.ConeGeometry(R, tierH, 7), rng, R * 0.22);
+		const cone = shadow(
+			new THREE.Mesh(geo, facet(jitterColor(rng, PINE_GREENS[i % PINE_GREENS.length], 0.008, 0.05, 0.04)))
+		);
+		cone.position.y = y0 + (h * 0.62 * i) / tiers + tierH * 0.4;
+		cone.rotation.y = rng.range(0, Math.PI * 2);
+		g.add(cone);
+	}
+	const top = shadow(
+		new THREE.Mesh(
+			displaceGeo(new THREE.ConeGeometry(0.14, h * 0.16, 6), rng, 0.03),
+			facet(jitterColor(rng, PINE_GREENS[3], 0.008, 0.05, 0.04))
+		)
+	);
+	top.position.y = h * 0.98;
+	g.add(top);
+
+	g.rotation.y = rng.range(0, Math.PI * 2);
+	g.scale.setScalar(rng.range(0.85, 1.2));
+	return g;
+}
+
+/** Mossy fallen log with snapped stub branches. */
+export function fallenLog(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const r = rng.range(0.13, 0.2);
+	const len = rng.range(0.9, 1.5);
+	const barkCol = jitterColor(rng, BARK, 0.008, 0.05, 0.05);
+
+	const log = shadow(
+		new THREE.Mesh(displaceGeo(new THREE.CylinderGeometry(r * 0.85, r, len, 7), rng, r * 0.18), facet(barkCol))
+	);
+	log.rotation.z = Math.PI / 2 + rng.jitter(0, 0.08);
+	log.rotation.y = rng.range(0, Math.PI * 2);
+	log.position.y = r * 0.85;
+	g.add(log);
+
+	// moss blanket
+	const moss = shadow(
+		new THREE.Mesh(
+			displaceGeo(new THREE.IcosahedronGeometry(r * 1.05, 1), rng, r * 0.3),
+			facet(jitterColor(rng, '#5da24f', 0.01, 0.06, 0.05))
+		)
+	);
+	moss.scale.set(len * 0.32, 0.35, 1);
+	moss.rotation.y = log.rotation.y;
+	moss.position.y = r * 1.5;
+	g.add(moss);
+
+	const stubs = rng.int(2, 4);
+	for (let i = 0; i < stubs; i++) {
+		const stub = shadow(
+			new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.025, rng.range(0.12, 0.22), 4), facet(barkCol))
+		);
+		const along = rng.range(-len * 0.35, len * 0.35);
+		const dir = log.rotation.y;
+		stub.position.set(Math.cos(dir) * along, r * rng.range(1.2, 1.7), -Math.sin(dir) * along);
+		stub.rotation.set(rng.jitter(0, 1), rng.next() * 3, rng.jitter(0, 1));
+		g.add(stub);
+	}
+	return g;
+}
+
+/** Stratified slab boulder — wide stacked layers, mossy cap chance. */
+export function slabRock(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const tones = ['#6b7565', '#78826f', '#8a937f'];
+	const layers = rng.int(2, 4);
+	let y = 0;
+	let R = rng.range(0.45, 0.75);
+	for (let i = 0; i < layers; i++) {
+		const lh = R * rng.range(0.28, 0.4);
+		const geo = displaceGeo(new THREE.IcosahedronGeometry(R, 1), rng, R * 0.3);
+		const slab = shadow(new THREE.Mesh(geo, facet(jitterColor(rng, rng.pick(tones), 0.005, 0.03, 0.05))));
+		slab.scale.y = lh / R;
+		slab.position.set(rng.jitter(0, R * 0.12), y + lh * 0.5, rng.jitter(0, R * 0.12));
+		slab.rotation.y = rng.range(0, Math.PI * 2);
+		g.add(slab);
+		y += lh * 0.85;
+		R *= rng.range(0.78, 0.92);
+	}
+	if (rng.chance(0.45)) {
+		const moss = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.IcosahedronGeometry(R * 0.9, 1), rng, R * 0.25),
+				facet(jitterColor(rng, '#5da24f', 0.01, 0.06, 0.05))
+			)
+		);
+		moss.scale.y = 0.3;
+		moss.position.y = y + R * 0.12;
+		g.add(moss);
+	}
+	return g;
+}
+
+/** Scattered faceted stone pile. */
+export function stonePile(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(4, 7);
+	for (let i = 0; i < n; i++) {
+		const r = rng.range(0.07, 0.16);
+		const s = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.IcosahedronGeometry(r, 0), rng, r * 0.3),
+				facet(jitterColor(rng, rng.pick(['#6b7565', '#78826f', '#8a937f']), 0.005, 0.03, 0.06))
+			)
+		);
+		const a = rng.range(0, Math.PI * 2);
+		const d = rng.range(0, 0.3);
+		s.position.set(Math.cos(a) * d, r * 0.6, Math.sin(a) * d);
+		s.rotation.set(rng.next() * 3, rng.next() * 3, rng.next() * 3);
+		g.add(s);
+	}
+	return g;
+}
+
+/** Chunky paddle-blade grass cluster — bright, faceted. */
+export function grassBlades(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(5, 9);
+	for (let i = 0; i < n; i++) {
+		const bh = rng.range(0.25, 0.5);
+		const blade = shadow(
+			new THREE.Mesh(
+				new THREE.ConeGeometry(0.045, bh, 4),
+				facet(jitterColor(rng, rng.chance(0.5) ? '#5fae3f' : '#7cc94e', 0.015, 0.08, 0.05))
+			)
+		);
+		blade.scale.z = 0.45;
+		const a = rng.range(0, Math.PI * 2);
+		const d = rng.range(0, 0.16);
+		blade.position.set(Math.cos(a) * d, bh * 0.45, Math.sin(a) * d);
+		blade.rotation.y = rng.range(0, Math.PI * 2);
+		blade.rotation.z = rng.jitter(0, 0.28);
+		g.add(blade);
+	}
 	return g;
 }
 
