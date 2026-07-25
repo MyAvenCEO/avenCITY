@@ -145,7 +145,7 @@ function placeRegions(
 	return centers;
 }
 
-export function generateMap(seed: number, size = 120): HexWorld {
+export function generateMap(seed: number, size = 360): HexWorld {
 	const rng = makeRng(seed);
 	const cells = growBlob(seed, size);
 	const landSet = new Set(cells.map(([q, r]) => key(q, r)));

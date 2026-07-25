@@ -8,10 +8,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { generateMap, type HexTile } from '../hexmap';
 import { buildWorld } from './buildWorld';
+import { createWater } from './water';
 
 const SKY = '#cde9ec';
-const SEA = '#63a8ba';
 const HEX_HEIGHT = 0.5; // keep in sync with buildWorld
+const WATER_LEVEL = 0.3; // sea surface laps against the island walls
 
 export interface SceneApi {
 	setWorld(seed: number): void;
@@ -80,36 +81,35 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	scene.background = new THREE.Color(SKY);
 	scene.fog = new THREE.Fog(SKY, 80, 160);
 
-	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 320);
-	camera.position.set(22, 24, 30);
+	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 600);
+	camera.position.set(34, 34, 46);
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.08;
 	controls.minDistance = 8;
-	controls.maxDistance = 90;
+	controls.maxDistance = 140;
 	controls.maxPolarAngle = Math.PI * 0.46;
 
 	scene.add(new THREE.HemisphereLight('#eaf6ff', '#d8c9a8', 0.95));
 	const sun = new THREE.DirectionalLight('#fff2dd', 2.1);
-	sun.position.set(26, 38, 16);
+	sun.position.set(44, 60, 26);
 	sun.castShadow = true;
-	sun.shadow.mapSize.set(2048, 2048);
-	sun.shadow.camera.left = -36;
-	sun.shadow.camera.right = 36;
-	sun.shadow.camera.top = 36;
-	sun.shadow.camera.bottom = -36;
-	sun.shadow.camera.far = 110;
+	sun.shadow.mapSize.set(4096, 4096);
+	sun.shadow.camera.left = -60;
+	sun.shadow.camera.right = 60;
+	sun.shadow.camera.top = 60;
+	sun.shadow.camera.bottom = -60;
+	sun.shadow.camera.far = 180;
 	sun.shadow.bias = -0.0004;
 	scene.add(sun);
 
-	const sea = new THREE.Mesh(
-		new THREE.CylinderGeometry(110, 110, 0.7, 64),
-		new THREE.MeshStandardMaterial({ color: SEA, roughness: 0.55, metalness: 0 })
-	);
-	sea.position.y = -0.02;
-	sea.receiveShadow = true;
-	scene.add(sea);
+	// the living sea (Gerstner waves + shore foam, see water.ts)
+	const water = createWater(460, WATER_LEVEL);
+	(water.mesh.material as THREE.ShaderMaterial).uniforms.uSunDir.value
+		.copy(sun.position)
+		.normalize();
+	scene.add(water.mesh);
 
 	const ring = makeSelectionRing();
 	scene.add(ring);
@@ -121,12 +121,14 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 			scene.remove(world);
 			disposeObject(world);
 		}
-		world = buildWorld(generateMap(seed));
+		const map = generateMap(seed);
+		world = buildWorld(map);
 		const box = new THREE.Box3().setFromObject(world);
 		const center = box.getCenter(new THREE.Vector3());
 		world.position.x = -center.x;
 		world.position.z = -center.z;
 		scene.add(world);
+		water.setWorld(map.tiles, world.position.x, world.position.z);
 		ring.visible = false;
 		options.onSelect?.(null);
 	}
@@ -183,11 +185,13 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 		}
 	}
 
+	const clock = new THREE.Clock();
 	let raf = 0;
 	function animate(): void {
 		raf = requestAnimationFrame(animate);
 		resize();
 		controls.update();
+		water.update(clock.getElapsedTime());
 		renderer.render(scene, camera);
 	}
 	animate();
@@ -199,6 +203,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 			canvas.removeEventListener('pointerdown', onPointerDown);
 			canvas.removeEventListener('pointerup', onPointerUp);
 			controls.dispose();
+			water.dispose();
 			if (world) disposeObject(world);
 			disposeObject(scene);
 			renderer.dispose();

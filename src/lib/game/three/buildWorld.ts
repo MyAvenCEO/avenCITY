@@ -11,6 +11,7 @@
  * lake and along the entire coast, ignoring tile boundaries.
  */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { AXIAL_DIRS, key, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
 import { makeRng, type Rng } from '../rng';
 import { blobTree, bush, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
@@ -258,6 +259,48 @@ function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh 
 	return mesh;
 }
 
+/**
+ * Merge a tile's decoration groups into ONE mesh (material colors baked into
+ * vertex colors). At 360 land tiles with dense forests this is the difference
+ * between ~1k draw calls and ~10k.
+ */
+function mergeDecoGroups(decos: THREE.Group[]): THREE.Mesh | null {
+	const geos: THREE.BufferGeometry[] = [];
+	for (const g of decos) {
+		g.updateMatrixWorld(true);
+		g.traverse((obj) => {
+			if (obj instanceof THREE.Mesh) {
+				const geo = (obj.geometry as THREE.BufferGeometry).clone().toNonIndexed();
+				geo.applyMatrix4(obj.matrixWorld);
+				geo.deleteAttribute('uv');
+				const count = geo.getAttribute('position').count;
+				const col = (obj.material as THREE.MeshStandardMaterial).color;
+				const arr = new Float32Array(count * 3);
+				for (let i = 0; i < count; i++) {
+					arr[i * 3] = col.r;
+					arr[i * 3 + 1] = col.g;
+					arr[i * 3 + 2] = col.b;
+				}
+				geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+				geos.push(geo);
+				obj.geometry.dispose();
+				(obj.material as THREE.Material).dispose();
+			}
+		});
+	}
+	if (geos.length === 0) return null;
+	const merged = mergeGeometries(geos, false);
+	for (const g of geos) g.dispose();
+	if (!merged) return null;
+	const mesh = new THREE.Mesh(
+		merged,
+		new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 })
+	);
+	mesh.castShadow = true;
+	mesh.receiveShadow = true;
+	return mesh;
+}
+
 function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 	const halves: Array<{ biome: BiomeId; sign: -1 | 1 | 0 }> =
 		tile.biomes.length === 2
@@ -269,6 +312,7 @@ function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 
 	const dirX = Math.cos(tile.splitDir);
 	const dirZ = Math.sin(tile.splitDir);
+	const decos: THREE.Group[] = [];
 
 	for (const half of halves) {
 		const spec = BIOMES[half.biome];
@@ -293,9 +337,12 @@ function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 			// quarter-scale furniture: hexes read spacious, resources stay legible
 			deco.scale.multiplyScalar(0.25);
 			deco.position.set(tile.x + px, HEX_HEIGHT, tile.z + pz);
-			group.add(deco);
+			decos.push(deco);
 		}
 	}
+
+	const merged = mergeDecoGroups(decos);
+	if (merged) group.add(merged);
 }
 
 /**
