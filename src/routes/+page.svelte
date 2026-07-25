@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { SceneApi } from '$lib/game/three/scene';
 	import { tileResources, type HexTile } from '$lib/game/hexmap';
+	import ResourceIcon from '$lib/components/ResourceIcon.svelte';
 
 	let canvas: HTMLCanvasElement;
 	let api: SceneApi | undefined;
@@ -62,8 +63,9 @@
 					<div class="flex flex-wrap gap-1.5">
 						{#each tileResources(selected) as res}
 							<span
-								class="rounded-full bg-sky px-2.5 py-1 font-mono text-[0.65rem] tracking-[0.08em] text-ink"
+								class="flex items-center gap-1.5 rounded-full bg-sky px-2.5 py-1 font-mono text-[0.65rem] tracking-[0.08em] text-ink"
 							>
+								<ResourceIcon name={res} class="h-3.5 w-3.5" />
 								{res}
 							</span>
 						{/each}

@@ -88,6 +88,28 @@ export function puffTree(rng: Rng): THREE.Group {
 	return blobTree(rng, rng.chance(0.5) ? '#f2b8c6' : '#f4c9a8');
 }
 
+/** Low bush — a trunkless crown hugging the ground. Forest filler. */
+export function bush(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const green = jitterColor(rng, rng.chance(0.5) ? '#6fb468' : '#8cc97f');
+	const main = shadow(new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 1), clay(green)));
+	main.position.y = 0.1;
+	main.scale.set(1, 0.75, 1);
+	main.rotation.y = rng.range(0, Math.PI * 2);
+	g.add(main);
+	if (rng.chance(0.5)) {
+		const side = shadow(
+			new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 1), clay(jitterColor(rng, '#7fbf77')))
+		);
+		const a = rng.range(0, Math.PI * 2);
+		side.position.set(Math.cos(a) * 0.16, 0.07, Math.sin(a) * 0.16);
+		side.scale.y = 0.7;
+		g.add(side);
+	}
+	g.scale.setScalar(rng.range(0.8, 1.3));
+	return g;
+}
+
 export function rock(rng: Rng, scale = 1): THREE.Group {
 	const g = new THREE.Group();
 	const n = rng.int(1, 2);

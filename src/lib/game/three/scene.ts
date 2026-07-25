@@ -10,7 +10,7 @@ import { generateMap, type HexTile } from '../hexmap';
 import { buildWorld } from './buildWorld';
 
 const SKY = '#cde9ec';
-const SEA = '#8fc9cd';
+const SEA = '#63a8ba';
 const HEX_HEIGHT = 0.5; // keep in sync with buildWorld
 
 export interface SceneApi {
@@ -33,32 +33,37 @@ function disposeObject(root: THREE.Object3D): void {
 	});
 }
 
-/** White clay ring that floats around the selected hex. */
+/** Slim, semi-transparent ring around the selected hex — present, not loud. */
 function makeSelectionRing(): THREE.Mesh {
 	const shape = new THREE.Shape();
 	const hole = new THREE.Path();
 	for (let i = 0; i < 6; i++) {
 		const a = (Math.PI / 3) * i;
 		const target = i === 0 ? 'moveTo' : 'lineTo';
-		shape[target](Math.cos(a) * 1.04, Math.sin(a) * 1.04);
-		hole[target](Math.cos(a) * 0.88, Math.sin(a) * 0.88);
+		shape[target](Math.cos(a) * 0.99, Math.sin(a) * 0.99);
+		hole[target](Math.cos(a) * 0.93, Math.sin(a) * 0.93);
 	}
 	shape.closePath();
 	hole.closePath();
 	shape.holes.push(hole);
 	const geo = new THREE.ExtrudeGeometry(shape, {
-		depth: 0.03,
+		depth: 0.012,
 		bevelEnabled: true,
-		bevelThickness: 0.02,
-		bevelSize: 0.02,
+		bevelThickness: 0.008,
+		bevelSize: 0.008,
 		bevelSegments: 2
 	});
 	geo.rotateX(-Math.PI / 2);
 	const mesh = new THREE.Mesh(
 		geo,
-		new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.55, metalness: 0 })
+		new THREE.MeshStandardMaterial({
+			color: '#fffdf6',
+			roughness: 0.6,
+			metalness: 0,
+			transparent: true,
+			opacity: 0.75
+		})
 	);
-	mesh.castShadow = true;
 	mesh.visible = false;
 	return mesh;
 }
@@ -99,10 +104,10 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	scene.add(sun);
 
 	const sea = new THREE.Mesh(
-		new THREE.CylinderGeometry(110, 110, 0.6, 64),
-		new THREE.MeshStandardMaterial({ color: SEA, roughness: 0.6, metalness: 0 })
+		new THREE.CylinderGeometry(110, 110, 0.7, 64),
+		new THREE.MeshStandardMaterial({ color: SEA, roughness: 0.55, metalness: 0 })
 	);
-	sea.position.y = -0.31;
+	sea.position.y = -0.02;
 	sea.receiveShadow = true;
 	scene.add(sea);
 

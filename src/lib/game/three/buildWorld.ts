@@ -13,16 +13,17 @@
 import * as THREE from 'three';
 import { AXIAL_DIRS, key, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
 import { makeRng, type Rng } from '../rng';
-import { blobTree, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
+import { blobTree, bush, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
 
 const HEX_RADIUS = 1.0; // flush — tiles form one continuous ground
 const HEX_HEIGHT = 0.5; // uniform — the board is flat
-const SEA_HEIGHT = 0.38; // sea sits a step lower
-const BEVEL = 0.05; // soft crease between tiles
+const BEVEL = 0.042; // soft crease between tiles
 const CLAY_SIDE = '#f5edda';
-const SEA_SIDE = '#c9dfda'; // sea prisms blend with the water, no hard grid
 const SHORE = '#ecdcae';
-const SEA_TOP = '#7ec4d2';
+/** The open water tone. SEA tiles are never rendered as hexes — they exist
+ * only as data so the coastal shore band computes; the visible sea is one
+ * unified plane in scene.ts using this same darker shade. */
+const SEA_TOP = '#5fa9bc';
 
 interface BiomeSpec {
 	top: string;
@@ -39,8 +40,9 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 	},
 	FOREST: {
 		top: '#77bd62',
-		density: [4, 8],
-		deco: (rng) => (rng.chance(0.55) ? pine(rng) : blobTree(rng))
+		density: [12, 22],
+		deco: (rng) =>
+			rng.chance(0.35) ? bush(rng) : rng.chance(0.55) ? pine(rng) : blobTree(rng)
 	},
 	MOUNTAIN: {
 		top: '#b3ac9f',
@@ -242,7 +244,7 @@ function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh 
 	geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
 	geo.computeVertexNormals();
 
-	const isWet = tile.kind === 'SEA' || tile.biomes.includes('RIVER');
+	const isWet = tile.biomes.includes('RIVER');
 	const mesh = new THREE.Mesh(
 		geo,
 		new THREE.MeshStandardMaterial({
@@ -251,7 +253,7 @@ function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh 
 			metalness: 0
 		})
 	);
-	mesh.position.y = (tile.kind === 'SEA' ? SEA_HEIGHT : HEX_HEIGHT) + 0.004;
+	mesh.position.y = HEX_HEIGHT + 0.004;
 	mesh.receiveShadow = true;
 	return mesh;
 }
@@ -303,15 +305,10 @@ function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
  * Only the vertical walls keep the clay/sea side color, blended softly
  * where the bevel meets them.
  */
-function buildTileBase(
-	tile: HexTile,
-	rng: Rng,
-	field: FieldSampler,
-	isSea: boolean
-): THREE.Mesh {
-	const height = isSea ? SEA_HEIGHT : HEX_HEIGHT;
+function buildTileBase(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh {
+	const height = HEX_HEIGHT;
 	const geo = hexPrism(HEX_RADIUS, height).toNonIndexed();
-	const sideColor = driftedColor(isSea ? SEA_SIDE : CLAY_SIDE, rng);
+	const sideColor = driftedColor(CLAY_SIDE, rng);
 	const pos = geo.getAttribute('position');
 	const colors = new Float32Array(pos.count * 3);
 	const scratch = new THREE.Color();
@@ -326,7 +323,7 @@ function buildTileBase(
 			// bevel + top: terrain color, darkened toward the rim -> the crease
 			const t = Math.min(1, Math.max(0, (y - bevelBottom) / BEVEL)); // 0 rim-bottom, 1 top
 			field(tile, tile.x + x, tile.z + z, scratch);
-			scratch.multiplyScalar(0.9 + 0.09 * t);
+			scratch.multiplyScalar(0.955 + 0.04 * t);
 			// soften the junction where the bevel meets the clay wall
 			if (t < 0.3) scratch.lerp(sideColor, 1 - t / 0.3);
 			c = scratch;
@@ -344,7 +341,7 @@ function buildTileBase(
 		new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, metalness: 0 })
 	);
 	mesh.position.set(tile.x, 0, tile.z);
-	mesh.castShadow = !isSea;
+	mesh.castShadow = true;
 	mesh.receiveShadow = true;
 	return mesh;
 }
@@ -356,21 +353,22 @@ export function buildWorld(world: HexWorld): THREE.Group {
 	const field = makeFieldSampler(styles, shore);
 
 	for (const tile of world.tiles) {
+		// SEA tiles are data-only (they feed the coastal shore band); the
+		// visible sea is one unified plane in scene.ts
+		if (tile.kind === 'SEA') continue;
+
 		const rng = makeRng(tile.seed);
-		const isSea = tile.kind === 'SEA';
-
 		const tileGroup = new THREE.Group();
-		// sea is scenery — only land tiles are selectable
-		if (!isSea) tileGroup.userData.tile = tile;
+		tileGroup.userData.tile = tile;
 
-		tileGroup.add(buildTileBase(tile, rng, field, isSea));
+		tileGroup.add(buildTileBase(tile, rng, field));
 
 		const disc = buildTopDisc(tile, rng, field);
 		disc.position.x = tile.x;
 		disc.position.z = tile.z;
 		tileGroup.add(disc);
 
-		if (!isSea) placeDecorations(tile, rng, tileGroup);
+		placeDecorations(tile, rng, tileGroup);
 		group.add(tileGroup);
 	}
 
