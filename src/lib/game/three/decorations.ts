@@ -750,6 +750,169 @@ export function grassBlades(rng: Rng): THREE.Group {
 	return g;
 }
 
+/** Birch — pale slender trunk, stacked light-green canopy lobes. */
+export function birchTree(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const h = rng.range(1.7, 2.3);
+	const trunk = shadow(
+		new THREE.Mesh(
+			new THREE.CylinderGeometry(0.035, 0.055, h * 0.85, 6),
+			facet(jitterColor(rng, '#e3dbc9', 0.004, 0.02, 0.04))
+		)
+	);
+	trunk.position.y = h * 0.42;
+	g.add(trunk);
+	const lobes = rng.int(2, 3);
+	for (let i = 0; i < lobes; i++) {
+		const r = (0.34 - i * 0.07) * rng.range(0.85, 1.15);
+		const lobe = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.IcosahedronGeometry(r, 1), rng, r * 0.3),
+				facet(jitterColor(rng, rng.chance(0.5) ? '#8cc763' : '#a5d67a', 0.012, 0.06, 0.04))
+			)
+		);
+		lobe.position.set(rng.jitter(0, 0.08), h * 0.62 + i * r * 1.2, rng.jitter(0, 0.08));
+		lobe.scale.y = 0.85;
+		g.add(lobe);
+	}
+	g.rotation.y = rng.range(0, Math.PI * 2);
+	g.scale.setScalar(rng.range(0.85, 1.15));
+	return g;
+}
+
+/** Broadleaf — thick trunk, wide clustered dark canopy. */
+export function broadleafTree(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const h = rng.range(1.3, 1.8);
+	const trunk = shadow(
+		new THREE.Mesh(
+			new THREE.CylinderGeometry(0.07, 0.12, h * 0.6, 6),
+			facet(jitterColor(rng, '#8a5f3c', 0.008, 0.05, 0.05))
+		)
+	);
+	trunk.position.y = h * 0.3;
+	g.add(trunk);
+	const lumps = rng.int(3, 4);
+	for (let i = 0; i < lumps; i++) {
+		const r = rng.range(0.28, 0.42);
+		const lump = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.IcosahedronGeometry(r, 1), rng, r * 0.32),
+				facet(jitterColor(rng, rng.chance(0.5) ? '#3f8a45' : '#57a24f', 0.01, 0.05, 0.04))
+			)
+		);
+		const a = (i / lumps) * Math.PI * 2 + rng.jitter(0, 0.5);
+		lump.position.set(Math.cos(a) * 0.2, h * 0.68 + rng.jitter(0, 0.1), Math.sin(a) * 0.2);
+		lump.scale.y = 0.8;
+		g.add(lump);
+	}
+	g.rotation.y = rng.range(0, Math.PI * 2);
+	g.scale.setScalar(rng.range(0.85, 1.2));
+	return g;
+}
+
+/** Fern — arched dark blades fanning from the forest floor. */
+export function fern(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(5, 8);
+	for (let i = 0; i < n; i++) {
+		const bh = rng.range(0.3, 0.5);
+		const blade = shadow(
+			new THREE.Mesh(
+				new THREE.ConeGeometry(0.05, bh, 4),
+				facet(jitterColor(rng, '#3f7a3a', 0.012, 0.06, 0.04))
+			)
+		);
+		blade.scale.z = 0.35;
+		const a = (i / n) * Math.PI * 2 + rng.jitter(0, 0.3);
+		blade.position.set(Math.cos(a) * 0.08, bh * 0.38, Math.sin(a) * 0.08);
+		blade.rotation.y = -a;
+		blade.rotation.z = rng.range(0.5, 0.85) * (Math.cos(a) >= 0 ? 1 : -1);
+		blade.rotation.x = rng.jitter(0, 0.2);
+		g.add(blade);
+	}
+	return g;
+}
+
+/** Mushroom cluster — red or brown caps on cream stems. */
+export function mushrooms(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(2, 4);
+	const capColor = rng.chance(0.55) ? '#c4452f' : '#a5713f';
+	for (let i = 0; i < n; i++) {
+		const sh = rng.range(0.06, 0.13);
+		const stem = shadow(
+			new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.028, sh, 5), facet('#ede3cf'))
+		);
+		const px = rng.jitter(0, 0.1);
+		const pz = rng.jitter(0, 0.1);
+		stem.position.set(px, sh / 2, pz);
+		g.add(stem);
+		const cap = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.ConeGeometry(rng.range(0.05, 0.09), 0.07, 6), rng, 0.012),
+				facet(jitterColor(rng, capColor, 0.008, 0.05, 0.04))
+			)
+		);
+		cap.position.set(px, sh + 0.025, pz);
+		g.add(cap);
+	}
+	return g;
+}
+
+/** Fallen twigs — thin sticks scattered on the ground. */
+export function twigSticks(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(2, 4);
+	for (let i = 0; i < n; i++) {
+		const len = rng.range(0.3, 0.6);
+		const twig = shadow(
+			new THREE.Mesh(
+				new THREE.CylinderGeometry(0.012, 0.018, len, 4),
+				facet(jitterColor(rng, '#9a6d45', 0.008, 0.04, 0.05))
+			)
+		);
+		twig.rotation.z = Math.PI / 2 + rng.jitter(0, 0.15);
+		twig.rotation.y = rng.range(0, Math.PI * 2);
+		twig.position.set(rng.jitter(0, 0.2), 0.02, rng.jitter(0, 0.2));
+		g.add(twig);
+	}
+	return g;
+}
+
+/** MOUNTAIN v2 — a cluster of great faceted peaks with snow-cap chance. */
+export function mountainPeaks(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const peaks = rng.int(1, 3);
+	const tones = ['#8a93a1', '#7e8894', '#99a2ae'];
+	for (let i = 0; i < peaks; i++) {
+		const R = rng.range(0.9, 1.4) * (i === 0 ? 1 : 0.6);
+		const H = rng.range(3.4, 5.0) * (i === 0 ? 1 : 0.65);
+		const geo = displaceGeo(new THREE.ConeGeometry(R, H, 6), rng, R * 0.24);
+		const peakMesh = shadow(
+			new THREE.Mesh(geo, facet(jitterColor(rng, rng.pick(tones), 0.004, 0.02, 0.04)))
+		);
+		const a = rng.range(0, Math.PI * 2);
+		const d = i === 0 ? 0 : rng.range(0.6, 1.1);
+		peakMesh.position.set(Math.cos(a) * d, H * 0.38, Math.sin(a) * d);
+		peakMesh.rotation.y = rng.range(0, Math.PI * 2);
+		g.add(peakMesh);
+
+		if (rng.chance(0.6)) {
+			const cap = shadow(
+				new THREE.Mesh(
+					displaceGeo(new THREE.ConeGeometry(R * 0.38, H * 0.3, 6), rng, R * 0.08),
+					facet(jitterColor(rng, '#f2f3ee', 0.002, 0.01, 0.02))
+				)
+			);
+			cap.position.set(peakMesh.position.x, H * 0.72, peakMesh.position.z);
+			cap.rotation.y = peakMesh.rotation.y;
+			g.add(cap);
+		}
+	}
+	return g;
+}
+
 /** Terracotta mud mound — CLAYPIT signature. */
 export function mudMound(rng: Rng): THREE.Group {
 	const g = new THREE.Group();

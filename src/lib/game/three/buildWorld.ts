@@ -28,8 +28,14 @@ import {
 	bush,
 	cactus,
 	cairn,
+	birchTree,
+	broadleafTree,
 	clayBoulder,
 	fallenLog,
+	fern,
+	mountainPeaks,
+	mushrooms,
+	twigSticks,
 	grassBlades,
 	pineTall,
 	slabRock,
@@ -89,7 +95,7 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 		// boulders, raw clay chunks, scorched dead trees. Sparse (a pit is
 		// mostly open ground) and at half scale so the hexagon reads large.
 		top: '#d69c66',
-		density: [1, 2],
+		density: [1, 3],
 		deco: (rng) => {
 			const d =
 				rng.chance(0.32)
@@ -104,22 +110,34 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 		}
 	},
 	FOREST: {
-		// v2 — the POLYGON-forest look: tall tiered pines, mossy fallen logs,
-		// stratified slab rocks, stone piles and chunky grass blades.
-		// Dense woods at half piece scale, so hexes read large and full.
+		// v3 — dense mixed woods at half piece scale. Trees dominate (~2/3 of
+		// pieces: pines with birch and broadleaf accents); logs and stones
+		// keep their old absolute density; the floor gets ferns, mushrooms,
+		// twigs and grass for undergrowth fidelity.
 		top: '#6cb254',
-		density: [21, 35],
+		density: [31, 50],
 		deco: (rng) => {
-			const d =
-				rng.chance(0.52)
+			const d = rng.chance(0.66)
+				? // the canopy: three species
+					rng.chance(0.7)
 					? pineTall(rng)
-					: rng.chance(0.3)
-						? grassBlades(rng)
-						: rng.chance(0.35)
-							? fallenLog(rng)
-							: rng.chance(0.55)
-								? slabRock(rng)
-								: stonePile(rng);
+					: rng.chance(0.5)
+						? birchTree(rng)
+						: broadleafTree(rng)
+				: // the floor + debris layer
+					rng.chance(0.3)
+					? grassBlades(rng)
+					: rng.chance(0.22)
+						? fern(rng)
+						: rng.chance(0.18)
+							? mushrooms(rng)
+							: rng.chance(0.2)
+								? twigSticks(rng)
+								: rng.chance(0.35)
+									? fallenLog(rng)
+									: rng.chance(0.55)
+										? slabRock(rng)
+										: stonePile(rng);
 			d.scale.multiplyScalar(0.5);
 			return d;
 		}
@@ -137,10 +155,19 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 						: blobTree(rng)
 	},
 	MOUNTAIN: {
-		top: '#b3ac9f',
+		// v2 — faceted low-poly: great displaced peak clusters with snow-cap
+		// chance (the island's skyline anchors), stratified slabs, stone
+		// piles and cairns. Peaks stay full-size on purpose.
+		top: '#9aa3ad',
 		density: [2, 4],
 		deco: (rng) =>
-			rng.chance(0.45) ? peak(rng) : rng.chance(0.5) ? cairn(rng) : rock(rng, 1.6)
+			rng.chance(0.5)
+				? mountainPeaks(rng)
+				: rng.chance(0.4)
+					? slabRock(rng)
+					: rng.chance(0.5)
+						? stonePile(rng)
+						: cairn(rng)
 	},
 	ORECLIFF: {
 		top: '#9c9184',
