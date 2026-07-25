@@ -880,34 +880,136 @@ export function twigSticks(rng: Rng): THREE.Group {
 	return g;
 }
 
-/** MOUNTAIN v2 — a cluster of great faceted peaks with snow-cap chance. */
+/**
+ * MOUNTAIN v3 — four formation families with big variety in height and
+ * steepness, per the low-poly references:
+ *   RIDGE  — 1-3 great asymmetric peaks (elongated, leaning), green ledge
+ *            shelves on the flanks, snow above the treeline
+ *   MESA   — stratified stacked terraces in warm cliff beige
+ *   SPIRES — a cluster of tall narrow rock needles
+ *   FIELD  — chunky boulder scatter
+ */
 export function mountainPeaks(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
-	const peaks = rng.int(1, 3);
-	const tones = ['#8a93a1', '#7e8894', '#99a2ae'];
-	for (let i = 0; i < peaks; i++) {
-		const R = rng.range(0.9, 1.4) * (i === 0 ? 1 : 0.6);
-		const H = rng.range(3.4, 5.0) * (i === 0 ? 1 : 0.65);
-		const geo = displaceGeo(new THREE.ConeGeometry(R, H, 6), rng, R * 0.24);
-		const peakMesh = shadow(
-			new THREE.Mesh(geo, facet(jitterColor(rng, rng.pick(tones), 0.004, 0.02, 0.04)))
-		);
-		const a = rng.range(0, Math.PI * 2);
-		const d = i === 0 ? 0 : rng.range(0.6, 1.1);
-		peakMesh.position.set(Math.cos(a) * d, H * 0.38, Math.sin(a) * d);
-		peakMesh.rotation.y = rng.range(0, Math.PI * 2);
-		g.add(peakMesh);
+	const beige = rng.chance(0.4);
+	const tones = beige
+		? ['#cfc4b0', '#c0b29c', '#b3a48d']
+		: ['#8a93a1', '#7e8894', '#99a2ae'];
+	const kindRoll = rng.next();
 
-		if (rng.chance(0.6)) {
-			const cap = shadow(
+	const greenLedge = (x: number, y: number, z: number, r: number): void => {
+		const ledge = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.IcosahedronGeometry(r, 1), rng, r * 0.3),
+				facet(jitterColor(rng, '#6cae53', 0.012, 0.06, 0.04))
+			)
+		);
+		ledge.scale.y = 0.22;
+		ledge.position.set(x, y, z);
+		ledge.rotation.y = rng.range(0, Math.PI * 2);
+		g.add(ledge);
+	};
+
+	if (kindRoll < 0.45) {
+		// RIDGE — the skyline formation
+		const peaks = rng.int(1, 3);
+		for (let i = 0; i < peaks; i++) {
+			const R = rng.range(0.7, 1.9) * (i === 0 ? 1 : rng.range(0.5, 0.75));
+			const H = rng.range(2.2, 6.2) * (i === 0 ? 1 : rng.range(0.5, 0.8));
+			const geo = displaceGeo(new THREE.ConeGeometry(R, H, rng.int(5, 7)), rng, R * 0.3);
+			const peakMesh = shadow(
+				new THREE.Mesh(geo, facet(jitterColor(rng, rng.pick(tones), 0.004, 0.02, 0.045)))
+			);
+			const a = rng.range(0, Math.PI * 2);
+			const d = i === 0 ? 0 : rng.range(0.7, 1.3);
+			peakMesh.position.set(Math.cos(a) * d, H * 0.38, Math.sin(a) * d);
+			peakMesh.scale.set(1, 1, rng.range(0.6, 1)); // ridge elongation
+			peakMesh.rotation.y = rng.range(0, Math.PI * 2);
+			peakMesh.rotation.z = rng.jitter(0, 0.05); // subtle lean
+			g.add(peakMesh);
+
+			// green shelves clinging to the flanks
+			if (rng.chance(0.65)) {
+				const shelves = rng.int(1, 3);
+				for (let s = 0; s < shelves; s++) {
+					const sa = rng.range(0, Math.PI * 2);
+					const sh = H * rng.range(0.18, 0.5);
+					const sr = R * (1 - sh / H) * 1.05;
+					greenLedge(
+						peakMesh.position.x + Math.cos(sa) * sr,
+						sh,
+						peakMesh.position.z + Math.sin(sa) * sr,
+						R * rng.range(0.25, 0.45)
+					);
+				}
+			}
+			// snow above the treeline
+			if (H > 3.6 && rng.chance(0.85)) {
+				const cap = shadow(
+					new THREE.Mesh(
+						displaceGeo(new THREE.ConeGeometry(R * 0.4, H * 0.28, 6), rng, R * 0.09),
+						facet(jitterColor(rng, '#f2f3ee', 0.002, 0.01, 0.02))
+					)
+				);
+				cap.position.set(peakMesh.position.x, H * 0.73, peakMesh.position.z);
+				cap.scale.copy(peakMesh.scale);
+				cap.rotation.y = peakMesh.rotation.y;
+				g.add(cap);
+			}
+		}
+	} else if (kindRoll < 0.7) {
+		// MESA — stratified terraces (always warm cliff beige)
+		const mesaTones = ['#cfc4b0', '#c0b29c', '#b3a48d'];
+		const tiers = rng.int(3, 5);
+		let y = 0;
+		let R = rng.range(1.1, 1.9);
+		for (let i = 0; i < tiers; i++) {
+			const th = rng.range(0.45, 0.75);
+			const geo = displaceGeo(new THREE.CylinderGeometry(R * 0.88, R, th, rng.int(6, 8)), rng, R * 0.16);
+			const tier = shadow(
+				new THREE.Mesh(geo, facet(jitterColor(rng, mesaTones[i % 3], 0.004, 0.02, 0.04)))
+			);
+			tier.position.set(rng.jitter(0, R * 0.08), y + th * 0.5, rng.jitter(0, R * 0.08));
+			tier.rotation.y = rng.range(0, Math.PI * 2);
+			g.add(tier);
+			y += th * 0.92;
+			R *= rng.range(0.72, 0.85);
+		}
+		if (rng.chance(0.6)) greenLedge(rng.jitter(0, 0.3), y + 0.06, rng.jitter(0, 0.3), R * 1.1);
+	} else if (kindRoll < 0.85) {
+		// SPIRES — narrow rock needles
+		const spires = rng.int(3, 5);
+		for (let i = 0; i < spires; i++) {
+			const R = rng.range(0.16, 0.36);
+			const H = rng.range(1.2, 3.4);
+			const geo = displaceGeo(new THREE.ConeGeometry(R, H, 5), rng, R * 0.35);
+			const spire = shadow(
+				new THREE.Mesh(geo, facet(jitterColor(rng, rng.pick(tones), 0.004, 0.02, 0.05)))
+			);
+			const a = rng.range(0, Math.PI * 2);
+			const d = rng.range(0.15, 1.0);
+			spire.position.set(Math.cos(a) * d, H * 0.4, Math.sin(a) * d);
+			spire.rotation.z = rng.jitter(0, 0.07);
+			spire.rotation.y = rng.range(0, Math.PI * 2);
+			g.add(spire);
+		}
+	} else {
+		// FIELD — chunky boulders
+		const n = rng.int(3, 5);
+		for (let i = 0; i < n; i++) {
+			const r = rng.range(0.4, 0.95);
+			const b = shadow(
 				new THREE.Mesh(
-					displaceGeo(new THREE.ConeGeometry(R * 0.38, H * 0.3, 6), rng, R * 0.08),
-					facet(jitterColor(rng, '#f2f3ee', 0.002, 0.01, 0.02))
+					displaceGeo(new THREE.IcosahedronGeometry(r, 1), rng, r * 0.34),
+					facet(jitterColor(rng, rng.pick(tones), 0.004, 0.02, 0.05))
 				)
 			);
-			cap.position.set(peakMesh.position.x, H * 0.72, peakMesh.position.z);
-			cap.rotation.y = peakMesh.rotation.y;
-			g.add(cap);
+			const a = rng.range(0, Math.PI * 2);
+			const d = rng.range(0, 1.1);
+			b.position.set(Math.cos(a) * d, r * 0.55, Math.sin(a) * d);
+			b.scale.y = rng.range(0.6, 0.85);
+			b.rotation.set(rng.jitter(0, 0.4), rng.range(0, Math.PI * 2), rng.jitter(0, 0.4));
+			g.add(b);
 		}
 	}
 	return g;

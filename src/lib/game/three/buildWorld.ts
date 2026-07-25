@@ -115,9 +115,9 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 		// keep their old absolute density; the floor gets ferns, mushrooms,
 		// twigs and grass for undergrowth fidelity.
 		top: '#6cb254',
-		density: [31, 50],
+		density: [46, 75],
 		deco: (rng) => {
-			const d = rng.chance(0.66)
+			const d = rng.chance(0.78)
 				? // the canopy: three species
 					rng.chance(0.7)
 					? pineTall(rng)
@@ -155,11 +155,11 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 						: blobTree(rng)
 	},
 	MOUNTAIN: {
-		// v2 — faceted low-poly: great displaced peak clusters with snow-cap
-		// chance (the island's skyline anchors), stratified slabs, stone
-		// piles and cairns. Peaks stay full-size on purpose.
+		// v2 — faceted low-poly: peak clusters, mesas and spires of varied
+		// steepness with snow-cap chance, stratified slabs, stone piles and
+		// cairns. Peaks stay full-size on purpose — the skyline anchors.
 		top: '#9aa3ad',
-		density: [2, 4],
+		density: [4, 8],
 		deco: (rng) =>
 			rng.chance(0.5)
 				? mountainPeaks(rng)
@@ -644,8 +644,8 @@ function buildDecoGeo(tile: HexTile, rng: Rng): THREE.BufferGeometry | null {
 			}
 			if (!ok) continue;
 			const deco = spec.deco(rng);
-			// quarter-scale furniture: hexes read spacious, resources stay legible
-			deco.scale.multiplyScalar(0.25);
+			// global piece scale (-25% from quarter): hexes read even more spacious
+			deco.scale.multiplyScalar(0.1875);
 			deco.position.set(tile.x + px, HEX_HEIGHT, tile.z + pz);
 			decos.push(deco);
 		}
