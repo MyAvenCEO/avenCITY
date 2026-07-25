@@ -15,10 +15,10 @@ import { AXIAL_DIRS, key, type BiomeId, type HexTile, type HexWorld } from '../h
 import { makeRng, type Rng } from '../rng';
 import { blobTree, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
 
-const HEX_RADIUS = 0.995; // near-seamless — tiles read as continuous ground
+const HEX_RADIUS = 1.0; // flush — tiles form one continuous ground
 const HEX_HEIGHT = 0.5; // uniform — the board is flat
 const SEA_HEIGHT = 0.38; // sea sits a step lower
-const BEVEL = 0.055; // soft clay edge, thin seam
+const BEVEL = 0.05; // soft crease between tiles
 const CLAY_SIDE = '#f5edda';
 const SEA_SIDE = '#c9dfda'; // sea prisms blend with the water, no hard grid
 const SHORE = '#ecdcae';
@@ -196,7 +196,9 @@ type FieldSampler = ReturnType<typeof makeFieldSampler>;
 
 /** Finely tessellated top disc, vertex-colored by the cross-tile field. */
 function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh {
-	const radius = HEX_RADIUS - BEVEL * 0.55;
+	// meet the bevel exactly — the disc covers the flat top, the colored
+	// bevel carries the terrain over the edge
+	const radius = HEX_RADIUS - BEVEL + 0.005;
 	const N = 8; // subdivisions per sector edge
 	const positions: number[] = [];
 	const colors: number[] = [];
@@ -286,12 +288,65 @@ function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 			}
 			if (!ok) continue;
 			const deco = spec.deco(rng);
-			// half-size furniture: the hexagon itself reads larger
-			deco.scale.multiplyScalar(0.5);
+			// quarter-scale furniture: hexes read spacious, resources stay legible
+			deco.scale.multiplyScalar(0.25);
 			deco.position.set(tile.x + px, HEX_HEIGHT, tile.z + pz);
 			group.add(deco);
 		}
 	}
+}
+
+/**
+ * The tile prism, vertex-colored so hex edges integrate into the terrain:
+ * the bevel ring (and top) take the FIELD color, gently darkened toward the
+ * rim — borders read as soft furrows pressed into the clay, not cut lines.
+ * Only the vertical walls keep the clay/sea side color, blended softly
+ * where the bevel meets them.
+ */
+function buildTileBase(
+	tile: HexTile,
+	rng: Rng,
+	field: FieldSampler,
+	isSea: boolean
+): THREE.Mesh {
+	const height = isSea ? SEA_HEIGHT : HEX_HEIGHT;
+	const geo = hexPrism(HEX_RADIUS, height).toNonIndexed();
+	const sideColor = driftedColor(isSea ? SEA_SIDE : CLAY_SIDE, rng);
+	const pos = geo.getAttribute('position');
+	const colors = new Float32Array(pos.count * 3);
+	const scratch = new THREE.Color();
+	const bevelBottom = height - BEVEL;
+
+	for (let i = 0; i < pos.count; i++) {
+		const x = pos.getX(i);
+		const y = pos.getY(i);
+		const z = pos.getZ(i);
+		let c: THREE.Color;
+		if (y > bevelBottom - 0.001) {
+			// bevel + top: terrain color, darkened toward the rim -> the crease
+			const t = Math.min(1, Math.max(0, (y - bevelBottom) / BEVEL)); // 0 rim-bottom, 1 top
+			field(tile, tile.x + x, tile.z + z, scratch);
+			scratch.multiplyScalar(0.9 + 0.09 * t);
+			// soften the junction where the bevel meets the clay wall
+			if (t < 0.3) scratch.lerp(sideColor, 1 - t / 0.3);
+			c = scratch;
+		} else {
+			c = sideColor;
+		}
+		colors[i * 3] = c.r;
+		colors[i * 3 + 1] = c.g;
+		colors[i * 3 + 2] = c.b;
+	}
+	geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+	const mesh = new THREE.Mesh(
+		geo,
+		new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, metalness: 0 })
+	);
+	mesh.position.set(tile.x, 0, tile.z);
+	mesh.castShadow = !isSea;
+	mesh.receiveShadow = true;
+	return mesh;
 }
 
 export function buildWorld(world: HexWorld): THREE.Group {
@@ -308,18 +363,7 @@ export function buildWorld(world: HexWorld): THREE.Group {
 		// sea is scenery — only land tiles are selectable
 		if (!isSea) tileGroup.userData.tile = tile;
 
-		const base = new THREE.Mesh(
-			hexPrism(HEX_RADIUS, isSea ? SEA_HEIGHT : HEX_HEIGHT),
-			new THREE.MeshStandardMaterial({
-				color: driftedColor(isSea ? SEA_SIDE : CLAY_SIDE, rng),
-				roughness: 0.95,
-				metalness: 0
-			})
-		);
-		base.position.set(tile.x, 0, tile.z);
-		base.castShadow = !isSea;
-		base.receiveShadow = true;
-		tileGroup.add(base);
+		tileGroup.add(buildTileBase(tile, rng, field, isSea));
 
 		const disc = buildTopDisc(tile, rng, field);
 		disc.position.x = tile.x;
