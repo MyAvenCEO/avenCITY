@@ -1,104 +1,26 @@
 /* ============================================================================
- * avenCITY — Corporate Identity tokens
- * "The Founder's Atlas"
- * ============================================================================
- *
- * THE IDEA
- * avenCITY is a city-building investment game: found districts, ignite sparks,
- * connect routes, and watch income streams tick back every hour. The identity
- * is the game board itself — a hand-drawn atlas: warm paper, engraved ink,
- * olive domes, and amber trade routes.
- *
- * LIGHT BY DESIGN. The board is paper, not a screen. Panels are brighter paper
- * on the page's paper, separated by hairline rules — never heavy shadows,
- * never glass, never gradients doing structural work.
- *
- * THE PALETTE IS THE MAP'S. Ink for words, olive for what you build, amber for
- * what moves (routes, energy, the sun), gold for what you earn. If a new
- * colour is needed, it must plausibly exist on this map.
- *
- * NO PURE BLACK, NO PURE WHITE. Ink on paper is #29271F on #F1ECDF.
+ * avenCITY — style tokens
+ * "Clay World" — soft low-poly pastel. A fresh start: no relation to any
+ * earlier identity. The world itself (the Three.js map) carries the look;
+ * this layer only styles the thin HUD floating above it.
  * ========================================================================= */
 
 @theme {
-	/* --- Paper: the board ---------------------------------------------------- */
-	--color-paper: #f1ecdf; /* page */
-	--color-paper-bright: #faf7ee; /* panels */
-	--color-paper-deep: #e7e0ce; /* wells, insets, hover */
+	/* --- The sky the world floats in --------------------------------------- */
+	--color-sky: #cde9ec; /* page + scene background, must match scene.ts */
+	--color-sea: #8fc9cd; /* the water disc the island sits on */
 
-	/* --- Ink: the engraving --------------------------------------------------- */
-	--color-ink: #29271f; /* primary text, primary buttons */
-	--color-ink-soft: #57534a; /* secondary text */
-	--color-ink-faint: #8a8474; /* meta only, 12px+ — never body copy */
-	--color-hairline: #d8d0bc; /* the 1px rules that structure everything */
+	/* --- HUD ---------------------------------------------------------------- */
+	--color-cloud: #ffffff; /* HUD pills */
+	--color-ink: #3a4a50; /* HUD text */
+	--color-ink-soft: #7b8d94; /* secondary HUD text */
+	--color-coral: #f09a8b; /* the one accent — actions, highlights */
 
-	/* --- Moss: what you build ------------------------------------------------- */
-	/* The dome glass and its gardens. District identity, growth, agriculture. */
-	--color-moss: #6c7a52;
-	--color-moss-deep: #47523a;
-	--color-moss-faint: #dfe3cf; /* tinted fills behind moss content */
-
-	/* --- Amber: what moves ---------------------------------------------------- */
-	/* Trade routes, energy, the season sun. THE ACCENT — active states, links,
-	 * the pulse of the economy. */
-	--color-amber: #c98a3b;
-	--color-amber-deep: #a06a24;
-	--color-amber-faint: #f3e2c8;
-
-	/* --- Gold: what you earn --------------------------------------------------- */
-	--color-gold: #b3892e; /* ratings, yields, the city's crest */
-
-	/* --- Water: the map's edge -------------------------------------------------- */
-	--color-water: #c7d6cb; /* coastal tint, calm backgrounds */
-
-	/* --- Status ------------------------------------------------------------------ */
-	--color-ok: #5f8a4e;
-	--color-warn: #c98a3b;
-	--color-fail: #b85c41;
-
-	/* --- Type ---------------------------------------------------------------------- */
-	--font-display: 'Playfair', 'Times New Roman', serif;
+	/* --- Type ---------------------------------------------------------------- */
 	--font-sans: 'Chillax', ui-sans-serif, system-ui, sans-serif;
 	--font-mono: 'AzeretMono', ui-monospace, SFMono-Regular, Menlo, monospace;
-
-	/* Display sizes are fluid; reading sizes are fixed so the rhythm never
-	 * wobbles between breakpoints. */
-	--text-hero: clamp(2.75rem, 7vw, 5.5rem);
-	--text-hero--line-height: 1.02;
-	--text-display: clamp(1.75rem, 3.5vw, 2.75rem);
-	--text-display--line-height: 1.12;
-	--text-title: 1.3125rem;
-	--text-title--line-height: 1.3;
-	--text-lead: 1.125rem;
-	--text-lead--line-height: 1.6;
-	--text-body: 0.9375rem;
-	--text-body--line-height: 1.65;
-	--text-meta: 0.8125rem;
-	--text-meta--line-height: 1.55;
-	--text-label: 0.6875rem; /* always uppercase, always tracked out */
-	--text-label--line-height: 1.4;
-
-	/* --- Geometry -------------------------------------------------------------------- */
-	/* Printed-card corners: soft but disciplined. The pill is reserved for
-	 * place-name labels and chips, exactly as on the map. */
-	--radius-chip: 999px;
-	--radius-panel: 1rem;
-	--radius-plate: 1.5rem;
-
-	/* --- Motion ---------------------------------------------------------------------- */
-	/* Paper turns, it doesn't bounce. One curve, two speeds. */
-	--ease-city: cubic-bezier(0.25, 0.6, 0.3, 1);
-	--duration-quick: 160ms;
-	--duration-settle: 360ms;
 }
 
-/* ---------------------------------------------------------------------------
- * Panel recipe — compositions consumed by base.css
- * ---------------------------------------------------------------------------
- * Structure comes from HAIRLINES, not shadows. The shadow exists only to lift
- * a panel a hair off the board; if you can point at the shadow, it's too big.
- * ------------------------------------------------------------------------ */
 :root {
-	--panel-shadow: 0 1px 2px rgb(41 39 31 / 0.05), 0 10px 28px -18px rgb(41 39 31 / 0.18);
-	--panel-shadow-raised: 0 2px 4px rgb(41 39 31 / 0.06), 0 18px 44px -20px rgb(41 39 31 / 0.26);
+	--hud-shadow: 0 2px 6px rgb(58 74 80 / 0.08), 0 10px 30px -10px rgb(58 74 80 / 0.25);
 }
