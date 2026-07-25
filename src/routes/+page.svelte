@@ -79,7 +79,7 @@
 			{:else}
 				<span class="hud-pill hud-label">tap a hex to inspect it</span>
 			{/if}
-			<span class="hud-pill hud-label hidden sm:inline-flex">drag to orbit · scroll to zoom</span>
+			<span class="hud-pill hud-label hidden sm:inline-flex">drag to travel · right-drag to orbit · scroll to zoom</span>
 		</div>
 	</div>
 </div>

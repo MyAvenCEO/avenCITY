@@ -106,18 +106,23 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 	FOREST: {
 		// v2 — the POLYGON-forest look: tall tiered pines, mossy fallen logs,
 		// stratified slab rocks, stone piles and chunky grass blades.
+		// Dense woods at half piece scale, so hexes read large and full.
 		top: '#6cb254',
-		density: [12, 20],
-		deco: (rng) =>
-			rng.chance(0.52)
-				? pineTall(rng)
-				: rng.chance(0.3)
-					? grassBlades(rng)
-					: rng.chance(0.35)
-						? fallenLog(rng)
-						: rng.chance(0.55)
-							? slabRock(rng)
-							: stonePile(rng)
+		density: [21, 35],
+		deco: (rng) => {
+			const d =
+				rng.chance(0.52)
+					? pineTall(rng)
+					: rng.chance(0.3)
+						? grassBlades(rng)
+						: rng.chance(0.35)
+							? fallenLog(rng)
+							: rng.chance(0.55)
+								? slabRock(rng)
+								: stonePile(rng);
+			d.scale.multiplyScalar(0.5);
+			return d;
+		}
 	},
 	GROVE: {
 		top: '#8ecb84',

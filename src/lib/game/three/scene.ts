@@ -90,6 +90,20 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	controls.minDistance = 8;
 	controls.maxDistance = 300;
 	controls.maxPolarAngle = Math.PI * 0.46;
+	// Map-style navigation: LEFT-drag travels across the map (ground-plane
+	// panning, no height change), RIGHT-drag orbits, wheel zooms. One-finger
+	// touch pans, two-finger pinch-rotates.
+	controls.screenSpacePanning = false;
+	controls.panSpeed = 1.15;
+	controls.mouseButtons = {
+		LEFT: THREE.MOUSE.PAN,
+		MIDDLE: THREE.MOUSE.DOLLY,
+		RIGHT: THREE.MOUSE.ROTATE
+	};
+	controls.touches = {
+		ONE: THREE.TOUCH.PAN,
+		TWO: THREE.TOUCH.DOLLY_ROTATE
+	};
 
 	scene.add(new THREE.HemisphereLight('#eaf6ff', '#d8c9a8', 0.95));
 	const sun = new THREE.DirectionalLight('#fff2dd', 2.1);
