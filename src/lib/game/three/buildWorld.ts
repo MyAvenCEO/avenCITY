@@ -21,7 +21,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { AXIAL_DIRS, key, WATER_BIOME, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
-import { makeRng, type Rng } from '../rng';
+import { hash2, makeRng, type Rng } from '../rng';
 import {
 	berryBush,
 	blobTree,
@@ -317,7 +317,8 @@ function buildStyles(world: HexWorld): Map<string, TileStyle> {
 function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Color) {
 	const scratch = new THREE.Color();
 	const waterColor = new THREE.Color('#5fb7c9');
-	return (tile: HexTile, wx: number, wz: number, out: THREE.Color): void => {
+	/** Writes the blended color to `out`; returns the wetness (0 dry..1 water). */
+	return (tile: HexTile, wx: number, wz: number, out: THREE.Color): number => {
 		let sumW = 0;
 		let water = 0;
 		out.setRGB(0, 0, 0);
@@ -347,7 +348,44 @@ function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Colo
 		// rivers and lake narrows stay one continuous body with blue-on-blue
 		// edges — never muddy land-tinted blends between water tiles
 		out.lerp(waterColor, smoothstep(0.5, 0.68, water) * 0.9);
+
+		return water;
 	};
+}
+
+/* ---------------------------------------------------------------------------
+ * Ground relief — world-continuous value noise for polygonized tile tops.
+ * Sampled by WORLD position, so vertices on a shared hex border displace
+ * identically on both tiles: the terrain bumps flow across borders while
+ * the flat furrow ring still marks each hexagon.
+ * ------------------------------------------------------------------------ */
+
+
+const latticeH = (ix: number, iz: number): number => hash2(ix, iz, 0x6e01) / 4294967296;
+
+function valueNoise(x: number, z: number): number {
+	const ix = Math.floor(x);
+	const iz = Math.floor(z);
+	const fx = x - ix;
+	const fz = z - iz;
+	const ux = fx * fx * (3 - 2 * fx);
+	const uz = fz * fz * (3 - 2 * fz);
+	const a = latticeH(ix, iz);
+	const b = latticeH(ix + 1, iz);
+	const c = latticeH(ix, iz + 1);
+	const d = latticeH(ix + 1, iz + 1);
+	return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
+}
+
+/** 0..1 rolling ground relief, two octaves. */
+function groundRelief(wx: number, wz: number): number {
+	return valueNoise(wx * 1.15, wz * 1.15) * 0.65 + valueNoise(wx * 2.7 + 37.2, wz * 2.7 - 11.8) * 0.35;
+}
+
+/** Upward-only bump height at a world position; water flattens to level. */
+function reliefHeight(wx: number, wz: number, wetness: number): number {
+	const dry = Math.max(0, 1 - wetness * 1.6);
+	return groundRelief(wx, wz) * 0.07 * dry;
 }
 
 /* ---------------------------------------------------------------------------
@@ -407,8 +445,11 @@ function buildTopDiscGeo(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Bu
 	const pushTri = (a: [number, number], b: [number, number], c: [number, number]): void => {
 		const dl = rng.jitter(0, 0.004);
 		for (const [px, pz] of [a, c, b]) {
-			positions.push(px, 0, pz);
-			field(tile, tile.x + px, tile.z + pz, scratch);
+			const wx = tile.x + px;
+			const wz = tile.z + pz;
+			const wet = field(tile, wx, wz, scratch);
+			// polygonized ground: world-continuous relief, flat near water
+			positions.push(px, reliefHeight(wx, wz, wet), pz);
 			scratch.offsetHSL(0, 0, dl);
 			colors.push(scratch.r, scratch.g, scratch.b);
 		}
@@ -745,24 +786,35 @@ export function buildWorld(world: HexWorld): THREE.Group {
 		if (tile.kind === 'SEA') continue;
 
 		const rng = makeRng(tile.seed);
-		const parts: THREE.BufferGeometry[] = [
+
+		// GROUND (base + disc + skirt): receives shadows but never casts —
+		// keeping flat terrain out of the shadow pass is the difference
+		// between 1fps and 60fps at this world size.
+		const groundParts: THREE.BufferGeometry[] = [
 			buildBaseGeo(tile, rng, field),
 			buildTopDiscGeo(tile, rng, field)
 		];
 		const skirt = buildSkirtGeo(tile, rng, field, isSea);
-		if (skirt) parts.push(skirt);
+		if (skirt) groundParts.push(skirt);
+		const ground = mergeGeometries(groundParts, false);
+		for (const p of groundParts) p.dispose();
+		if (!ground) continue;
+
+		const groundMesh = new THREE.Mesh(ground, material);
+		groundMesh.castShadow = false;
+		groundMesh.receiveShadow = true;
+		groundMesh.userData.tile = tile;
+		group.add(groundMesh);
+
+		// DECORATIONS: the only shadow casters.
 		const deco = buildDecoGeo(tile, rng);
-		if (deco) parts.push(deco);
-
-		const merged = mergeGeometries(parts, false);
-		for (const p of parts) p.dispose();
-		if (!merged) continue;
-
-		const mesh = new THREE.Mesh(merged, material);
-		mesh.castShadow = true;
-		mesh.receiveShadow = true;
-		mesh.userData.tile = tile;
-		group.add(mesh);
+		if (deco) {
+			const decoMesh = new THREE.Mesh(deco, material);
+			decoMesh.castShadow = true;
+			decoMesh.receiveShadow = true;
+			decoMesh.userData.tile = tile;
+			group.add(decoMesh);
+		}
 	}
 
 	return group;

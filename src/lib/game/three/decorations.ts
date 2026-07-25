@@ -591,7 +591,7 @@ export function pineTall(rng: Rng): THREE.Group {
 	g.add(trunk);
 
 	// stub branches poking through the canopy
-	const stubs = rng.int(4, 8);
+	const stubs = rng.int(2, 4);
 	for (let i = 0; i < stubs; i++) {
 		const stub = shadow(
 			new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, rng.range(0.12, 0.24), 4), facet(barkCol))
@@ -730,7 +730,7 @@ export function stonePile(rng: Rng): THREE.Group {
 /** Chunky paddle-blade grass cluster — bright, faceted. */
 export function grassBlades(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
-	const n = rng.int(5, 9);
+	const n = rng.int(4, 6);
 	for (let i = 0; i < n; i++) {
 		const bh = rng.range(0.25, 0.5);
 		const blade = shadow(
@@ -814,7 +814,7 @@ export function broadleafTree(rng: Rng): THREE.Group {
 /** Fern — arched dark blades fanning from the forest floor. */
 export function fern(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
-	const n = rng.int(5, 8);
+	const n = rng.int(4, 6);
 	for (let i = 0; i < n; i++) {
 		const bh = rng.range(0.3, 0.5);
 		const blade = shadow(

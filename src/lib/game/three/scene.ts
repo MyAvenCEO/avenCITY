@@ -8,11 +8,36 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { generateMap, type HexTile } from '../hexmap';
 import { buildWorld } from './buildWorld';
-import { createWater } from './water';
 
 const SKY = '#cde9ec';
 const HEX_HEIGHT = 0.5; // keep in sync with buildWorld
 const WATER_LEVEL = 0.3; // sea surface laps against the island walls
+
+/**
+ * Super-simple faceted low-poly sea: a static displaced plane with flat
+ * shading — zero shader cost, zero per-frame work, instant load. Vertices
+ * displace by a position-hash (coincident verts move together) so the
+ * surface stays watertight while the triangles catch the light.
+ */
+function buildSimpleSea(size: number): THREE.Mesh {
+	const geo = new THREE.PlaneGeometry(size, size, 110, 110).toNonIndexed();
+	geo.rotateX(-Math.PI / 2);
+	const pos = geo.getAttribute('position');
+	for (let i = 0; i < pos.count; i++) {
+		const x = pos.getX(i);
+		const z = pos.getZ(i);
+		const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
+		pos.setY(i, (h - Math.floor(h)) * 0.09);
+	}
+	geo.computeVertexNormals();
+	const mesh = new THREE.Mesh(
+		geo,
+		new THREE.MeshStandardMaterial({ color: '#5fa9bc', roughness: 0.65, metalness: 0, flatShading: true })
+	);
+	mesh.position.y = WATER_LEVEL - 0.09;
+	mesh.receiveShadow = true;
+	return mesh;
+}
 
 export interface SceneApi {
 	setWorld(seed: number): void;
@@ -73,7 +98,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.toneMappingExposure = 1.05;
 
@@ -90,26 +115,15 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	controls.minDistance = 8;
 	controls.maxDistance = 300;
 	controls.maxPolarAngle = Math.PI * 0.46;
-	// Map-style navigation: LEFT-drag travels across the map (ground-plane
-	// panning, no height change), RIGHT-drag orbits, wheel zooms. One-finger
-	// touch pans, two-finger pinch-rotates.
+	// same feel as the sandbox: LEFT-drag orbits, RIGHT-drag pans, wheel
+	// zooms (OrbitControls defaults) — ground-plane panning keeps height
 	controls.screenSpacePanning = false;
-	controls.panSpeed = 1.15;
-	controls.mouseButtons = {
-		LEFT: THREE.MOUSE.PAN,
-		MIDDLE: THREE.MOUSE.DOLLY,
-		RIGHT: THREE.MOUSE.ROTATE
-	};
-	controls.touches = {
-		ONE: THREE.TOUCH.PAN,
-		TWO: THREE.TOUCH.DOLLY_ROTATE
-	};
 
 	scene.add(new THREE.HemisphereLight('#eaf6ff', '#d8c9a8', 0.95));
 	const sun = new THREE.DirectionalLight('#fff2dd', 2.1);
 	sun.position.set(60, 84, 36);
 	sun.castShadow = true;
-	sun.shadow.mapSize.set(4096, 4096);
+	sun.shadow.mapSize.set(2048, 2048);
 	sun.shadow.camera.left = -90;
 	sun.shadow.camera.right = 90;
 	sun.shadow.camera.top = 90;
@@ -118,12 +132,9 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	sun.shadow.bias = -0.0004;
 	scene.add(sun);
 
-	// the living sea (Gerstner waves + shore foam, see water.ts)
-	const water = createWater(560, WATER_LEVEL);
-	(water.mesh.material as THREE.ShaderMaterial).uniforms.uSunDir.value
-		.copy(sun.position)
-		.normalize();
-	scene.add(water.mesh);
+	// the sea — simple faceted low-poly, static
+	const sea = buildSimpleSea(560);
+	scene.add(sea);
 
 	const ring = makeSelectionRing();
 	scene.add(ring);
@@ -142,7 +153,6 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 		world.position.x = -center.x;
 		world.position.z = -center.z;
 		scene.add(world);
-		water.setWorld(map.tiles, world.position.x, world.position.z);
 		ring.visible = false;
 		options.onSelect?.(null);
 	}
@@ -200,7 +210,7 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 	}
 
 	// dev diagnostics handle (harmless in prod; enables live inspection)
-	(window as unknown as Record<string, unknown>).__scene = { renderer, scene, camera, water, sun };
+	(window as unknown as Record<string, unknown>).__scene = { renderer, scene, camera, sea, sun };
 
 	const clock = new THREE.Clock();
 	let raf = 0;
@@ -208,7 +218,6 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 		raf = requestAnimationFrame(animate);
 		resize();
 		controls.update();
-		water.update(clock.getElapsedTime());
 		renderer.render(scene, camera);
 	}
 	animate();
@@ -220,7 +229,6 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 			canvas.removeEventListener('pointerdown', onPointerDown);
 			canvas.removeEventListener('pointerup', onPointerUp);
 			controls.dispose();
-			water.dispose();
 			if (world) disposeObject(world);
 			disposeObject(scene);
 			renderer.dispose();
