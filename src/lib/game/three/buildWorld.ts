@@ -28,7 +28,11 @@ import {
 	bush,
 	cactus,
 	cairn,
+	clayBoulder,
+	clayChunks,
+	clayTerrace,
 	crystal,
+	deadTree,
 	flower,
 	goldTuft,
 	lilyPad,
@@ -74,10 +78,19 @@ const BIOMES: Record<BiomeId, BiomeSpec> = {
 			rng.chance(0.5) ? lilyPad(rng) : rng.chance(0.55) ? reeds(rng) : pebble(rng)
 	},
 	CLAYPIT: {
-		top: '#d9a983',
-		density: [3, 5],
+		// v2 — faceted low-poly art direction (first biome on the new style):
+		// terraced dig mounds, crumpled terracotta boulders, raw clay chunks
+		// (the resource, unmistakably) and scorched dead trees.
+		top: '#d69c66',
+		density: [5, 8],
 		deco: (rng) =>
-			rng.chance(0.5) ? mudMound(rng) : rng.chance(0.5) ? pebble(rng) : rock(rng, 0.9)
+			rng.chance(0.32)
+				? clayTerrace(rng)
+				: rng.chance(0.38)
+					? clayBoulder(rng)
+					: rng.chance(0.55)
+						? clayChunks(rng)
+						: deadTree(rng)
 	},
 	FOREST: {
 		top: '#77bd62',

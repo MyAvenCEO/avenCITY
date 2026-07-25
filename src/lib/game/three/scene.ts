@@ -79,16 +79,16 @@ export function createScene(canvas: HTMLCanvasElement, options: SceneOptions = {
 
 	const scene = new THREE.Scene();
 	scene.background = new THREE.Color(SKY);
-	scene.fog = new THREE.Fog(SKY, 160, 340);
+	scene.fog = new THREE.Fog(SKY, 240, 480);
 
-	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 600);
-	camera.position.set(48, 46, 64);
+	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 900);
+	camera.position.set(88, 84, 118);
 
 	const controls = new OrbitControls(camera, canvas);
 	controls.enableDamping = true;
 	controls.dampingFactor = 0.08;
 	controls.minDistance = 8;
-	controls.maxDistance = 190;
+	controls.maxDistance = 300;
 	controls.maxPolarAngle = Math.PI * 0.46;
 
 	scene.add(new THREE.HemisphereLight('#eaf6ff', '#d8c9a8', 0.95));

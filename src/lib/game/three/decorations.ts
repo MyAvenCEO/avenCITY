@@ -437,6 +437,140 @@ export function goldTuft(rng: Rng): THREE.Group {
 	return g;
 }
 
+/* ---------------------------------------------------------------------------
+ * FACETED LOW-POLY toolkit — the stylised art direction (visible triangles,
+ * flat shading, organically displaced silhouettes). Rolled out biome by
+ * biome, starting with CLAYPIT.
+ * ------------------------------------------------------------------------ */
+
+/** Flat-shaded material — the faceted look lives or dies by this. */
+function facet(color: string | THREE.Color): THREE.MeshStandardMaterial {
+	return new THREE.MeshStandardMaterial({
+		color,
+		roughness: 0.95,
+		metalness: 0,
+		flatShading: true
+	});
+}
+
+/**
+ * Organic displacement: joggle vertices by a hash of their POSITION, so
+ * coincident vertices (shared face corners of non-indexed polyhedra) move
+ * identically — the shape stays watertight while the silhouette crumples
+ * into believable low-poly rock.
+ */
+function displaceGeo(geo: THREE.BufferGeometry, rng: Rng, amount: number): THREE.BufferGeometry {
+	const pos = geo.getAttribute('position');
+	const ox = rng.range(0, 100);
+	const oz = rng.range(0, 100);
+	for (let i = 0; i < pos.count; i++) {
+		const x = pos.getX(i);
+		const y = pos.getY(i);
+		const z = pos.getZ(i);
+		const h1 = Math.sin((x + ox) * 12.9898 + (y - oz) * 78.233 + z * 37.719) * 43758.5453;
+		const h2 = Math.sin((z + ox) * 26.651 + (x + oz) * 15.731 + y * 94.673) * 24634.6345;
+		const h3 = Math.sin((y - ox) * 61.313 + (z - oz) * 11.135 + x * 53.989) * 56445.2345;
+		pos.setXYZ(
+			i,
+			x + (h1 - Math.floor(h1) - 0.5) * amount,
+			y + (h2 - Math.floor(h2) - 0.5) * amount,
+			z + (h3 - Math.floor(h3) - 0.5) * amount
+		);
+	}
+	geo.computeVertexNormals();
+	return geo;
+}
+
+const CLAY_TONES = ['#d99862', '#c97f4d', '#c27b45', '#b06a3e', '#a95f36'];
+
+/** Faceted terracotta boulder — CLAYPIT terrain anchor. */
+export function clayBoulder(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const r = rng.range(0.55, 0.95);
+	const geo = displaceGeo(new THREE.IcosahedronGeometry(r, 1), rng, r * 0.42);
+	const b = shadow(new THREE.Mesh(geo, facet(jitterColor(rng, rng.pick(CLAY_TONES), 0.006, 0.04, 0.05))));
+	b.scale.y = rng.range(0.65, 0.9);
+	b.position.y = r * 0.55;
+	b.rotation.y = rng.range(0, Math.PI * 2);
+	g.add(b);
+	if (rng.chance(0.5)) {
+		const r2 = r * rng.range(0.4, 0.6);
+		const s = shadow(
+			new THREE.Mesh(
+				displaceGeo(new THREE.IcosahedronGeometry(r2, 1), rng, r2 * 0.4),
+				facet(jitterColor(rng, rng.pick(CLAY_TONES), 0.006, 0.04, 0.05))
+			)
+		);
+		const a = rng.range(0, Math.PI * 2);
+		s.position.set(Math.cos(a) * r * 1.1, r2 * 0.5, Math.sin(a) * r * 1.1);
+		s.scale.y = 0.7;
+		g.add(s);
+	}
+	return g;
+}
+
+/** Terraced clay mound — stacked faceted steps, like a dig site. */
+export function clayTerrace(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const tiers = rng.int(2, 3);
+	let y = 0;
+	let r = rng.range(0.7, 1.05);
+	for (let i = 0; i < tiers; i++) {
+		const geo = displaceGeo(new THREE.CylinderGeometry(r * 0.82, r, 0.28, 7), rng, 0.12);
+		const tier = shadow(
+			new THREE.Mesh(geo, facet(jitterColor(rng, CLAY_TONES[Math.min(i + 1, 4)], 0.006, 0.04, 0.04)))
+		);
+		tier.position.y = y + 0.14;
+		tier.rotation.y = rng.range(0, Math.PI * 2);
+		g.add(tier);
+		y += 0.26;
+		r *= rng.range(0.62, 0.74);
+	}
+	return g;
+}
+
+/** Raw CLAY chunks — the biome's harvestable resource, unmistakably. */
+export function clayChunks(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const n = rng.int(3, 5);
+	for (let i = 0; i < n; i++) {
+		const r = rng.range(0.16, 0.3);
+		const geo = displaceGeo(new THREE.IcosahedronGeometry(r, 0), rng, r * 0.35);
+		const chunk = shadow(
+			new THREE.Mesh(geo, facet(jitterColor(rng, rng.chance(0.3) ? '#8f4a2c' : '#b35c33', 0.008, 0.05, 0.05)))
+		);
+		const a = rng.range(0, Math.PI * 2);
+		const d = rng.range(0, 0.45);
+		chunk.position.set(Math.cos(a) * d, r * 0.7, Math.sin(a) * d);
+		chunk.rotation.set(rng.next() * 3, rng.next() * 3, rng.next() * 3);
+		g.add(chunk);
+	}
+	return g;
+}
+
+/** Bare dead tree — sun-scorched claypit accent (faceted, leafless). */
+export function deadTree(rng: Rng): THREE.Group {
+	const g = new THREE.Group();
+	const col = jitterColor(rng, '#7d4630', 0.006, 0.04, 0.05);
+	const h = rng.range(1.0, 1.5);
+	const trunk = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.13, h, 5), facet(col)));
+	trunk.position.y = h / 2;
+	trunk.rotation.z = rng.jitter(0, 0.1);
+	g.add(trunk);
+	const branches = rng.int(2, 3);
+	for (let i = 0; i < branches; i++) {
+		const bh = h * rng.range(0.35, 0.55);
+		const br = shadow(new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.06, bh, 4), facet(col)));
+		const a = rng.range(0, Math.PI * 2);
+		br.position.set(Math.cos(a) * 0.1, h * rng.range(0.55, 0.85), Math.sin(a) * 0.1);
+		br.rotation.z = Math.cos(a) * rng.range(0.5, 0.9);
+		br.rotation.x = Math.sin(a) * rng.range(0.5, 0.9);
+		g.add(br);
+	}
+	g.scale.setScalar(rng.range(0.8, 1.2));
+	return g;
+}
+
 /** Terracotta mud mound — CLAYPIT signature. */
 export function mudMound(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
