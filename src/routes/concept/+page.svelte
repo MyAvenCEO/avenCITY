@@ -52,6 +52,8 @@
 		{ p: 'SPARKminds', v: '1 ♥ invested = 1 SPARKmind' },
 		{ p: 'Dividends', v: 'stream in real time, × level' },
 		{ p: 'Dome build LV.1', v: '8 PLANK + 6 BRICK + 4 GLASS' },
+		{ p: 'Hex usage fee', v: '6 ♥ / day per dome → City Spark' },
+		{ p: 'Land ownership', v: 'City Spark only — never for sale' },
 		{ p: 'Market', v: 'open — damped daily, clamped 0.5×–3× base' },
 		{ p: 'Freedom', v: 'dividends ≥ living costs, 7 days straight' }
 	];
@@ -63,7 +65,8 @@
 		'Treasury governance: auto-pay funded sparks, or city votes with hearts?',
 		'Is 7%/day demurrage enough pressure, or also pause minting above a wallet cap?',
 		'Biome balance: should some hexes be resource-poor on purpose — pure real-estate plays?',
-		'Offline: overnight ≈ 8 game days of melting hearts — is a standing "auto-invest" Aven directive the fix?'
+		'Offline: overnight ≈ 8 game days of melting hearts — is a standing "auto-invest" Aven directive the fix?',
+		'Who owns the City Spark? Proposal: all citizens equally — its ground-rent income funds the daily UBI.'
 	];
 </script>
 
@@ -123,6 +126,18 @@
 			<code class="font-mono text-meta whitespace-nowrap text-ink">
 				WILD (biomes visible) ──(spark funded + built)──▶ DOME ──(upgrades)──▶ LV.2–5
 			</code>
+		</div>
+		<div class="panel mt-6 p-7">
+			<span class="pill-ink label">The City Spark</span>
+			<p class="mt-4 max-w-2xl text-body text-ink-soft">
+				<strong class="font-medium text-ink">The land is never for sale.</strong> All
+				hexagons belong — permanently — to the City Spark, a native spark that predates
+				every player. Domes pay a daily hex usage fee (ground rent) for their parcel;
+				the domes themselves stay private, SPARKmind-owned, collecting their own income —
+				a LIVING dome collects rent from its residents while paying its own ground rent
+				to the city. You can own what you build and run, never the ground itself: no
+				land speculation, no landlording on unimproved dirt.
+			</p>
 		</div>
 	</section>
 

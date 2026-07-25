@@ -56,6 +56,16 @@ carry the natural resources. Five biomes cover all ten base resources:
 - Extraction requires a dome on a hex with the matching biome; output rates
   are biome-configured (JSON).
 
+**The land is never for sale.** All hexagons are owned — permanently — by
+**the CITY SPARK**, a native spark that predates every player. Real estate
+cannot be bought, only *used*: every dome pays a daily **hex usage fee**
+(ground rent) to the City Spark for the parcel it stands on. Domes
+themselves are private — funded by SPARKmind raises, owned by their
+holders, collecting their own income (a LIVING dome collects residential
+rent from its citizens while paying its own ground rent to the city). What
+you can own is what you *build and run*, never the ground itself — no land
+speculation, no landlording on unimproved dirt.
+
 ```
 WILD (biomes visible) ──(spark funded + built)──▶ DOME ──(upgrades)──▶ LV.2–5
 ```
@@ -93,8 +103,11 @@ made literal.
   long you hoard — there is a natural ceiling on cash, none on ownership.
 - 💬 Q5: is demurrage alone enough spending pressure, or do we also pause
   minting above a wallet cap (e.g. 72 ♥ = 3 days)?
-- Sinks that fully burn hearts: demurrage + dome upkeep. Everything else
-  circulates (needs → dome owners, investments → treasury → factories).
+- **Demurrage is the only burn.** Everything else circulates: needs → dome
+  owners, investments → treasury → factories, and **hex usage fees → the
+  City Spark** (replacing v0.2's burned upkeep). Proposal 💬 Q8: the City
+  Spark is owned by *all citizens equally* — its ground-rent income funds
+  the daily UBI. Land value returns to everyone; Henry George would smile.
 
 ## 6. Resources, recipes & the open market
 
@@ -209,7 +222,7 @@ free-text agents.
 | SPARKminds | 1 ♥ = 1 SPARKmind | dilution via new raises |
 | Founder min stake | 24 ♥ | skin in the game |
 | Dome build (LV.1) | 8 PLANK + 6 BRICK + 4 GLASS | bought at market by treasury |
-| Dome upkeep | 6 ♥/day, burned | second burn sink |
+| Hex usage fee | 6 ♥/day per dome → CITY SPARK | ground rent, circulates |
 | Market damping | exponent 0.5, clamp 0.5×–3× base | daily repricing |
 | LIVING dome | houses 6 · 8 GRAIN + 2 HERBS/day | permaculture baked in |
 | FREEDOM | dividends ≥ living, 7 days | crest + score |
@@ -231,6 +244,10 @@ free-text agents.
    (~192 ♥ minted, melting at 7%). Acceptable as-is, or does the Aven need a
    standing "auto-invest my hearts into X" directive? (My take: the standing
    directive IS the elegant fix — and very on-thesis.)
+8. **Who owns the City Spark?** It collects every dome's ground rent. My
+   proposal: all citizens hold it equally and its income funds the daily
+   UBI — land value returns to everyone (Georgist single-tax, gamified).
+   Alternative: it feeds the treasury and the UBI stays pure minting.
 
 ---
 
