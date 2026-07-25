@@ -44,18 +44,19 @@
 
 	const tuning = [
 		{ p: 'Time', v: '1 real day = 24 game days' },
+		{ p: 'Founding Grant', v: '50,000 ♥ at spawn — 30K hex share + 20K free' },
+		{ p: 'Hex unlock', v: '300,000 ♥ — min 10 founders × 30K' },
 		{ p: 'Heart income', v: '24 ♥ / game day — universal, equal' },
 		{ p: 'Demurrage', v: '7% per game day on held hearts' },
 		{ p: 'Wages', v: 'none — income is UBI + dividends only' },
-		{ p: 'Cost of living', v: '~12 ♥ / day at seed prices' },
-		{ p: 'Spark goal', v: '240 ♥ within 7 game days' },
+		{ p: 'Cost of living', v: 'grows with lifestyle level (LV.1 → LV.5)' },
 		{ p: 'SPARKminds', v: '1 ♥ invested = 1 SPARKmind' },
 		{ p: 'Dividends', v: 'stream in real time, × level' },
 		{ p: 'Dome build LV.1', v: '8 PLANK + 6 BRICK + 4 GLASS' },
-		{ p: 'Hex usage fee', v: '6 ♥ / day per dome → City Spark' },
+		{ p: 'Hex usage fee', v: '6 ♥ / day × dome level → City Spark' },
 		{ p: 'Land ownership', v: 'City Spark only — never for sale' },
-		{ p: 'Market', v: 'open — damped daily, clamped 0.5×–3× base' },
-		{ p: 'Freedom', v: 'dividends ≥ living costs, 7 days straight' }
+		{ p: 'Market', v: 'fully open — players set every price' },
+		{ p: 'Freedom', v: 'dividends ≥ living at current level, 7 days' }
 	];
 
 	const questions = [
@@ -186,15 +187,18 @@ goal reached in time?
 
 	<!-- 04 · Hearts & demurrage -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">04 — Hearts: minted daily, melting slowly</h2>
+		<h2 class="label text-amber-deep">04 — Hearts: the grant, the drip, the melt</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			Everyone mints <strong class="font-medium text-ink">24 ♥ per game day</strong> — one
-			real day is 24 game days. Held hearts melt at
-			<strong class="font-medium text-ink">7% demurrage per game day</strong>: attention
-			can't be hoarded, an idle wallet plateaus around 343 ♥ no matter how long you wait.
-			Invested hearts don't melt — <em class="italic"
-				>the only way to store attention is to own something with it.</em
-			> And there are zero wages in this world: income is your UBI and your dividend streams.
+			Every player spawns with the <strong class="font-medium text-ink"
+				>Founding Grant: 50,000 ♥ in advance</strong
+			> — 30,000 locked as one founder share of a new hexagon unlock (ten citizens pool
+			300,000 to open a hex: population growth IS city growth), and 20,000 free to invest
+			in sparks, domes and upgrades. From then on everyone mints
+			<strong class="font-medium text-ink">24 ♥ per game day</strong>. Held hearts melt at
+			<strong class="font-medium text-ink">7% demurrage per game day</strong> — attention
+			can't be hoarded, an idle wallet plateaus around 343 ♥. Invested hearts don't melt —
+			<em class="italic">the only way to store attention is to own something with it.</em>
+			And there are zero wages in this world: income is your UBI and your dividend streams.
 			Nothing else exists.
 		</p>
 	</section>
@@ -204,10 +208,13 @@ goal reached in time?
 		<h2 class="label text-amber-deep">05 — Configured recipes, discovered prices</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
 			Only the composition layer is pre-configured: what goes in, what comes out, which
-			dome can run it — Minecraft-style, all JSON. What things <em class="italic">cost</em>
-			is discovered on one open market, lightly damped so prices move but never whipsaw.
-			High prices are the founding signal: GLASS at 2.6× base means the city needs a
-			glassworks — and someone will spark one.
+			dome can run it — Minecraft-style, all JSON
+			(<code class="font-mono text-meta">game/config/</code>). What things
+			<em class="italic">cost</em> is decided entirely by the players: sellers list at any
+			ask, buyers take what they accept, and Avens trade on standing instructions. High
+			prices are the founding signal — GLASS trading rich means the city needs a
+			glassworks, and someone will spark one. Shortage self-corrects through founding, not
+			through a pricing engine.
 		</p>
 		<div class="mt-6 grid gap-6 md:grid-cols-2">
 			<div class="well overflow-x-auto px-6 py-5">
@@ -224,13 +231,15 @@ goal reached in time?
 }`}</pre>
 			</div>
 			<div class="well overflow-x-auto px-6 py-5">
-				<pre class="font-mono text-meta leading-relaxed text-ink">{`// market: open, damped
-price(tomorrow) =
-  price(today)
-  × (demand / supply)^0.5
+				<pre class="font-mono text-meta leading-relaxed text-ink">{`// market: fully open
+// no configured prices anywhere
 
-clamped 0.5× – 3× base
-repriced every game day`}</pre>
+sellers list at any ask
+buyers take what they accept
+
+"sell BREAD at 8+,
+ undercut cheapest by 1"
+      — a standing Aven directive`}</pre>
 			</div>
 		</div>
 	</section>
@@ -281,14 +290,18 @@ repriced every game day`}</pre>
 
 	<!-- 08 · Freedom -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">08 — The rat race &amp; freedom</h2>
+		<h2 class="label text-amber-deep">08 — Needs that grow, freedom you must hold</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			Needs — water, food, home — cost about half your daily hearts at seed prices; the
-			other half is investable attention. <strong class="font-medium text-ink"
-				>Freedom is the win:</strong
-			> when your dividend streams cover your cost of living for 7 straight days, your whole
-			UBI becomes free capital. The city's score is its Freedom Rate — the share of citizens
-			who own their way out.
+			Needs scale with level — and levels grow over time. A citizen's lifestyle level
+			rises with tenure, and each level's per-day needs are a configured table: LV.1 lives
+			on water, bread and a room; LV.5 wants six meals, three home slots, joy and cloth.
+			Domes have the same physics — a LV.1 factory sips 2 WATER + 1 POWER a day, a LV.5
+			gulps 24 + 14 plus tools and cloth. Scale ambition, scale appetite.
+			<strong class="font-medium text-ink">Freedom is the win, but not a badge:</strong>
+			dividend streams must cover your cost of living <em class="italic"
+				>at your current level</em
+			> for 7 straight days — and life keeps getting bigger underneath you. The city's score
+			is its Freedom Rate.
 		</p>
 	</section>
 

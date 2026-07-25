@@ -1,12 +1,16 @@
 # avenCITY — Living Concept Paper
 
 > **Status: DRAFT v0.3 — for discussion.** Changes from v0.2: hexes carry
-> **biomes**; **open market pricing is back** (only the composition layer is
-> pre-configured); the first **10 base resources** and the survival-start
-> spark sequence are specified; heart expiry replaced by **7% demurrage**;
-> time rebased to **1 game day = 1 real hour**.
+> **biomes**; **fully open market** (players set prices themselves — only the
+> composition layer is pre-configured); the first **10 base resources** and
+> the survival-start spark sequence are specified; heart expiry replaced by
+> **7% demurrage**; time rebased to **1 game day = 1 real hour**; the
+> **Founding Grant** (50K at spawn) and **level-scaled growing needs** for
+> citizens and domes.
 > 💬 marks open questions. All numbers live in the tuning table (§9).
-> This paper also renders on the site at `/concept`.
+> This paper renders on the site at `/concept`, and the economy is executable
+> data in [`game/config/`](game/config/): `resources.json` · `biomes.json` ·
+> `recipes.json` · `domes.json` · `citizens.json`.
 
 ## 0. Design pillars
 
@@ -59,12 +63,18 @@ carry the natural resources. Five biomes cover all ten base resources:
 **The land is never for sale.** All hexagons are owned — permanently — by
 **the CITY SPARK**, a native spark that predates every player. Real estate
 cannot be bought, only *used*: every dome pays a daily **hex usage fee**
-(ground rent) to the City Spark for the parcel it stands on. Domes
-themselves are private — funded by SPARKmind raises, owned by their
-holders, collecting their own income (a LIVING dome collects residential
-rent from its citizens while paying its own ground rent to the city). What
-you can own is what you *build and run*, never the ground itself — no land
-speculation, no landlording on unimproved dirt.
+(ground rent, scaled by dome level) to the City Spark for the parcel it
+stands on. Domes themselves are private — funded by SPARKmind raises, owned
+by their holders, collecting their own income (a LIVING dome collects
+residential rent from its citizens while paying its own ground rent to the
+city). What you can own is what you *build and run*, never the ground
+itself — no land speculation, no landlording on unimproved dirt.
+
+**Unlocking a hex takes a village.** A new hexagon opens only when **at
+least 10 citizens pool 300,000 ♥** (30,000 each) to the City Spark. Every
+spawning player's Founding Grant (§5) earmarks exactly one such share — so
+**ten new citizens = one new hexagon**. Population growth IS city growth;
+the map expands at the speed the community does.
 
 ```
 WILD (biomes visible) ──(spark funded + built)──▶ DOME ──(upgrades)──▶ LV.2–5
@@ -93,8 +103,15 @@ stream does too). Watching your hearts tick upward *live* is the core
 dopamine of ownership — the income-stream panel from the reference board,
 made literal.
 
-## 5. HEARTS — minting & demurrage
+## 5. HEARTS — the Founding Grant, minting & demurrage
 
+- **The Founding Grant:** every player spawns with **50,000 ♥ in advance** —
+  their first investment, day one. It is earmarked:
+  - **30,000 ♥ → one founder share of a new hexagon unlock** (locked; pools
+    with 9 other citizens' shares to open a hex, §2).
+  - **20,000 ♥ → free investment budget** — sparks, domes, upgrades. It melts
+    like all held hearts: deploy it or watch demurrage eat it. The first
+    session IS an investing session.
 - **Minting:** 24 ♥ per citizen per game day, dripped 1 ♥/game-hour.
 - **Demurrage: 7% per game day** on *held* balances — hearts melt while idle
   (Gesell's rusting money). Invested hearts (SPARKminds) don't melt — that's
@@ -132,20 +149,21 @@ Only composition is fixed: inputs → outputs, rates, and which dome runs it.
 { "id": "extract",     "dome": "FACTORY", "inputs": {},  "biome": "required",       "output": "per biome table" }
 ```
 
-### 6.3 The open market (prices discovered, lightly damped)
+### 6.3 The open market (people decide, fully open)
 
-Fixed prices are gone. One global market; each resource has a floating price:
+**No configured prices anywhere — the market is the players.** Sellers (via
+their Avens) list output at whatever ask they choose; buyers take the offers
+they accept. No base prices, no clamps, no formula: price discovery is pure
+supply, demand and nerve.
 
-```
-price(r, tomorrow) = clamp( price(r, today) × (demand / supply)^0.5 ,
-                            0.5×base , 3×base )
-```
-
-- `base` (in `market.json`) only seeds day 0 and anchors the clamps.
-- Demand/supply measured over the last game day; damping exponent 0.5 keeps
-  moves felt-but-not-whipsawing. Players see today's price + a 7-day
-  sparkline. High prices ARE the founding signal: "GLASS at 2.6× — someone
-  should spark a glassworks."
+- The UI shows last-trade price + 7-day sparkline per resource — enough to
+  smell scarcity and opportunity.
+- Standing Aven directives do the work: "sell BREAD at 8+, undercut the
+  cheapest ask by 1", "buy WATER up to 3". The market is agents trading on
+  their founders' instructions.
+- High prices ARE the founding signal: GLASS trading rich means the city
+  needs a glassworks — and someone will spark one. Shortage self-corrects
+  through founding, not through a pricing engine.
 
 ### 6.4 The survival start (the first sparks)
 
@@ -182,21 +200,35 @@ each raise dilutes, each is a new "would you still invest?"):
 Level also multiplies the dividend stream (§4) — upgrades are literally
 investments in the income stream's flow rate.
 
-## 7. Citizens & the rat race
+## 7. Citizens & the rat race — needs that grow
 
 **There are zero wages in this world.** Post-AGI: nobody sells labor,
 there is nothing to be employed *as*. Income is exactly two things — your
 minted 24 ♥/day (the attention UBI) and **dividend streams from SPARKminds
-you hold**. The rat race isn't about working; it's the gap between
-*consuming your UBI* and *owning enough streams that the UBI becomes pure
-investment capital*.
+you hold**.
 
-Daily needs at market prices: **WATER** (1), **FOOD** (1 BREAD), **HOME**
-(rent to a LIVING dome). At seed prices ~12 ♥/day against 24 ♥ income —
-about half your attention is survival, half is investable.
-**FREEDOM:** dividend streams ≥ cost of living for 7 straight days — your
-needs are owned, your whole UBI is free capital. City score: **Freedom
-Rate**.
+**Needs scale with level, and levels grow over time.** Every citizen has a
+lifestyle level (LV.1–5, rising with tenure — one level per game year); every
+level's needs are a configured per-day table (`citizens.json`):
+
+| | LV.1 | LV.3 | LV.5 |
+| --- | --- | --- | --- |
+| WATER | 1 | 2 | 4 |
+| FOOD | 1 | 3 | 6 |
+| HOME slots | 1 | 2 | 3 |
+| JOY | — | 2 | 4 |
+| CLOTH | — | 1 | 3 |
+
+**Domes have the same physics** (`domes.json`): a LV.1 factory sips
+2 WATER + 1 POWER a day, a LV.5 gulps 24 WATER + 14 POWER + tools + cloth.
+Scale ambition, scale appetite — bigger streams need bigger supply chains,
+which is exactly what makes room for the next founders.
+
+**FREEDOM** is therefore not a badge you win once: dividend streams ≥ cost
+of living *at your current level*, held 7 straight days — and life keeps
+getting bigger underneath you. The rat race is lifestyle inflation,
+mechanized; escaping it for good means growing streams faster than your
+life grows. City score: **Freedom Rate**.
 
 ## 8. Avens (unchanged)
 
@@ -214,15 +246,17 @@ free-text agents.
 | Heart income | 24 ♥/day (1/game-hour) | universal, equal |
 | **Demurrage** | **7% per game day** on held hearts | idle ceiling ≈ 343 ♥ |
 | Wallet mint-cap | 💬 Q5 (proposal: none, demurrage only) | |
-| Cost of living | ~12 ♥/day at seed prices | WATER+BREAD+rent |
+| Cost of living | grows with lifestyle level (citizens.json) | LV.1 modest → LV.5 hungry |
 | Wages | **none — zero labor market** | income = UBI + dividends only |
 | Dividends | stream in real time, × level multiplier | the live income stream |
 | Upgrade verticals | SPEED · EFFICIENCY · MARGIN, LV.1–5 each | 60 ♥ × current LV per step |
-| Spark goal (default) | 240 ♥ in 7 days (7 h real) | ~10 committed backers |
+| Founding Grant | 50,000 ♥ at spawn (30K hex share + 20K free) | first investment, day one |
+| Hex unlock | 300,000 ♥ — min 10 founders × 30K | ten citizens = one hexagon |
+| Spark raise (typical LV.1) | ~6,000 ♥ in 7 days | grant-scale, not drip-scale 💬 |
 | SPARKminds | 1 ♥ = 1 SPARKmind | dilution via new raises |
 | Founder min stake | 24 ♥ | skin in the game |
 | Dome build (LV.1) | 8 PLANK + 6 BRICK + 4 GLASS | bought at market by treasury |
-| Hex usage fee | 6 ♥/day per dome → CITY SPARK | ground rent, circulates |
+| Hex usage fee | 6 ♥/day × dome level → CITY SPARK | ground rent, circulates |
 | Market damping | exponent 0.5, clamp 0.5×–3× base | daily repricing |
 | LIVING dome | houses 6 · 8 GRAIN + 2 HERBS/day | permaculture baked in |
 | FREEDOM | dividends ≥ living, 7 days | crest + score |
