@@ -1,211 +1,237 @@
 # avenCITY — Living Concept Paper
 
-> **Status: DRAFT v0.2 — for discussion.** v0.1's IDEA→PRODUCT→DOME phases,
-> dual currency and open market are **collapsed and gone**. This version is
-> radically simpler: hexes, one currency, fixed prices, JSON recipes.
+> **Status: DRAFT v0.3 — for discussion.** Changes from v0.2: hexes carry
+> **biomes**; **open market pricing is back** (only the composition layer is
+> pre-configured); the first **10 base resources** and the survival-start
+> spark sequence are specified; heart expiry replaced by **7% demurrage**;
+> time rebased to **1 game day = 1 real hour**.
 > 💬 marks open questions. All numbers live in the tuning table (§9).
-> Canonical copy of this paper also renders on the site at `/concept`.
+> This paper also renders on the site at `/concept`.
 
 ## 0. Design pillars
 
-1. **The map is the whole UI.** Hexagons on a map — that's the game. No
-   dashboards as primary surfaces; every mechanic must be visible as a hex,
-   a dome, or a number on one.
-2. **One currency: HEARTS.** Everyone receives the same 24 per game day.
-   Attention is the capital of the post-AGI world.
-3. **Everything pre-configured.** Recipes, prices, build costs, upgrades — all
-   static JSON. No player-driven markets, no price discovery. Depth comes from
-   *composition* (Minecraft-style recipes), not from simulation complexity.
-4. **You instruct, your Aven runs.** Players make what/why decisions; Aven
-   agent-CEOs execute all operations.
-5. **Own the streams, exit the rat race.** Invest hearts → hold SPARKminds →
-   dividends cover your needs → freedom. The Kiyosaki loop, hex by hex.
+1. **The map is the whole UI.** Hexagons on a map — that's the game.
+2. **One currency: HEARTS** — minted equally for everyone, melting slowly
+   (demurrage). Attention is the capital; it cannot be hoarded.
+3. **Composition is configured, prices are discovered.** Recipes — what goes
+   in, what comes out, what a factory can make — are static JSON. What things
+   *cost* emerges from players on an open market.
+4. **You instruct, your Aven runs.** Players decide what/why; Aven agent-CEOs
+   execute everything operational.
+5. **Own the streams, exit the rat race.** Hearts → SPARKminds → dividends →
+   freedom.
 
 ---
 
-## 1. The board
+## 1. Time
 
-The city is a **hex map**. Every hex is a parcel in one of three states:
+**One real day = 24 game days.** (1 game day = 1 real hour.)
+
+| Unit | Real time | Notes |
+| --- | --- | --- |
+| **Game day** | **1 hour** | The heartbeat. 24 ♥ minted per day — 1 per game hour (2.5 real min). |
+| Game week | 7 h | Default spark funding window. |
+| Game year | 365 days ≈ 15 real days | A season ≈ 4 real days. |
+
+The rhythm this buys: checking in once or twice a real day is enough to
+invest your accrued hearts before demurrage eats them — daily spending
+pressure without minute-level FOMO.
+
+## 2. The board — hexes & biomes
+
+The city is a hex map. **Every hex is composed of 1 or 2 biomes**, and biomes
+carry the natural resources. Five biomes cover all ten base resources:
+
+| Biome | Natural resources |
+| --- | --- |
+| RIVER | WATER · CLAY |
+| FOREST | WOOD · HERBS |
+| MOUNTAIN | STONE · ORE |
+| MEADOW | GRAIN · FIBER |
+| DUNES | SAND · SUN |
+
+- A 2-biome hex (e.g. RIVER + FOREST) offers up to four resources — hex
+  value is its biome combination. Location genuinely matters: you cannot
+  found a waterworks on a dune.
+- Extraction requires a dome on a hex with the matching biome; output rates
+  are biome-configured (JSON).
 
 ```
-WILD ──(spark funded + built)──▶ DOME ──(upgrades)──▶ DOME LV.2–5
+WILD (biomes visible) ──(spark funded + built)──▶ DOME ──(upgrades)──▶ LV.2–5
 ```
 
-- **WILD** — undeveloped nature. Buildable if adjacent to the city.
-- **DOME** — developed, one of three types (§2), producing every day.
-- The city grows **one funded spark at a time** — every dome on the map is a
-  business somebody believed in. The map IS the cap table of the city.
-
-## 2. Dome types
+## 3. Dome types (unchanged from v0.2)
 
 | Type | What it is | What it produces |
 | --- | --- | --- |
-| **LIVING** | Housing with integrated permaculture — gardens are part of the architecture | **Always FOOD** (permaculture co-location) + houses N citizens (rent) |
-| **FACTORY** | Production hall running exactly **one recipe** | The recipe's output resource |
-| **VENUE** | Community building — stadium, theatre, bathhouse, academy | **JOY** (the culture resource) + adjacency bonus to neighbouring domes 💬 Q3 |
+| **LIVING** | Housing with integrated permaculture | GRAIN + HERBS daily (biome-boosted) + houses citizens (rent) |
+| **FACTORY** | Extraction or production, exactly **one recipe** | The recipe's output |
+| **VENUE** | Stadium, theatre, bathhouse, academy | JOY + neighbourhood bonus 💬 |
 
-Design intent: LIVING domes make the city self-feeding by construction —
-food is never a separate industry vertical someone forgot to build. VENUEs
-make community a first-class investment, not decoration.
+## 4. SPARKS & SPARKminds (unchanged from v0.2)
 
-## 3. SPARKS & SPARKminds
+A spark proposes: *which hex, which dome, which recipe.* Investors' hearts
+mint **SPARKminds 1:1** (pro-rata dividend shares, forever); the hearts pool
+in the **City Treasury**, which pays construction by buying materials from
+the city's own factories at market price. Goal missed → full refund.
+Founder minimum stake: 24 ♥. Upgrade raises issue new SPARKminds (dilution).
 
-A **SPARK** is a proposal to develop a hex: *which hex, which dome type,
-which recipe* (factories), pitched by a founder and run by their Aven.
+**Dividends stream in real time.** A dome's net income doesn't arrive as a
+daily batch — it drips into SPARKmind holders' wallets continuously, and the
+stream scales with the spark's level (production multiplies per LV, so the
+stream does too). Watching your hearts tick upward *live* is the core
+dopamine of ownership — the income-stream panel from the reference board,
+made literal.
 
-**The funding flow (one step, no phases):**
+## 5. HEARTS — minting & demurrage
 
-```
-founder pitches SPARK on a WILD hex
-        │
-        ▼
-players invest HEARTS  ──────────────▶  investors receive SPARKminds
-        │                               (pro-rata shares of this dome)
-        ▼
-HEARTS go into the CITY TREASURY  (global pool, city currency)
-        │
-        ▼
-goal G reached within T days?
-   ├── NO  → all hearts refunded, spark dissolves
-   └── YES → treasury pays the build cost (fixed, from prices.json)
-             → dome rises on the hex → production starts next day
-```
+- **Minting:** 24 ♥ per citizen per game day, dripped 1 ♥/game-hour.
+- **Demurrage: 7% per game day** on *held* balances — hearts melt while idle
+  (Gesell's rusting money). Invested hearts (SPARKminds) don't melt — that's
+  the whole point: **the only way to store attention is to invest it.**
+- Consequence: an idle wallet converges to ~343 ♥ (24 ÷ 0.07) no matter how
+  long you hoard — there is a natural ceiling on cash, none on ownership.
+- 💬 Q5: is demurrage alone enough spending pressure, or do we also pause
+  minting above a wallet cap (e.g. 72 ♥ = 3 days)?
+- Sinks that fully burn hearts: demurrage + dome upkeep. Everything else
+  circulates (needs → dome owners, investments → treasury → factories).
 
-- **SPARKminds** are the share token: 1 invested ♥ = 1 SPARKmind of that
-  spark. They entitle the holder to a pro-rata slice of the dome's daily
-  net income, forever. (Founder's skin-in-the-game minimum: 24 ♥.)
-- **The City Treasury** is where invested hearts pool. It is the city's
-  currency reserve: it pays construction and upgrade costs into the economy
-  (buying materials from factory domes at fixed prices — so big builds are
-  demand for the city's own industry). 💬 Q4 governance
-- Dividends: a dome's daily revenue minus upkeep, split pro-rata across all
-  its SPARKminds. Founder holds their invested share like everyone else —
-  plus a founder bonus 💬 Q2.
+## 6. Resources, recipes & the open market
 
-## 4. HEARTS — the one currency
+### 6.1 The first 10 base resources
 
-- **24 ♥ per player per game day** (1 game day = 1 real minute). Universal,
-  equal, non-tradeable as income — you can only *invest* or *spend* them.
-- Everything is denominated in hearts: prices, build costs, dividends, needs.
-- **Faucet:** the daily 24 per citizen. **Sinks:** dome upkeep (burned) and
-  unspent-heart expiry after 7 days 💬 Q5. Everything else circulates.
+**WATER · WOOD · STONE · ORE · SAND · CLAY · GRAIN · FIBER · HERBS · SUN** —
+each anchored to a biome (§2). These are the whole tier-0 economy at launch.
 
-## 5. The recipe engine (universal, JSON-configured)
+### 6.2 The recipe layer (pre-configured JSON)
 
-One engine, everything is data. Three config files define the whole economy:
+Only composition is fixed: inputs → outputs, rates, and which dome runs it.
 
 ```jsonc
-// resources.json — the tree
-{ "id": "FLOUR", "tier": 1 }
-
-// recipes.json — universal shape: inputs → output, at a rate
-{
-  "id": "bake_bread",
-  "inputs": { "FLOUR": 2, "WATER": 1 },
-  "output": { "BREAD": 1 },
-  "minutesPerBatch": 1,          // in game-days
-  "domeType": "FACTORY"
-}
-
-// prices.json — fixed, no market
-{ "BREAD": 6, "FLOUR": 2, "WATER": 1, "GRAIN": 1 }
+// recipes.json — the universal shape
+{ "id": "mill_flour",  "dome": "FACTORY", "inputs": { "GRAIN": 2 },                 "output": { "FLOUR": 1 } }
+{ "id": "bake_bread",  "dome": "FACTORY", "inputs": { "FLOUR": 1, "WATER": 1, "WOOD": 1 }, "output": { "BREAD": 2 } }
+{ "id": "saw_planks",  "dome": "FACTORY", "inputs": { "WOOD": 2 },                  "output": { "PLANK": 1 } }
+{ "id": "fire_bricks", "dome": "FACTORY", "inputs": { "CLAY": 2, "WOOD": 1 },       "output": { "BRICK": 1 } }
+{ "id": "melt_glass",  "dome": "FACTORY", "inputs": { "SAND": 2, "WOOD": 1 },       "output": { "GLASS": 1 } }
+{ "id": "forge_tools", "dome": "FACTORY", "inputs": { "ORE": 1, "WOOD": 1 },        "output": { "TOOL": 1 } }
+{ "id": "weave_cloth", "dome": "FACTORY", "inputs": { "FIBER": 2 },                 "output": { "CLOTH": 1 } }
+{ "id": "extract",     "dome": "FACTORY", "inputs": {},  "biome": "required",       "output": "per biome table" }
 ```
 
-**MVP resource tree (small enough to memorize):**
+### 6.3 The open market (prices discovered, lightly damped)
+
+Fixed prices are gone. One global market; each resource has a floating price:
 
 ```
-BASE (tier 0)      TIER 1                    TIER 2 (needs / build)
-SUN                POWER   = 2·SUN           BREAD = 2·FLOUR + WATER      [FOOD need]
-WATER              FLOUR   = 2·GRAIN         PANEL = METAL + POWER        [build material]
-GRAIN (LIVING)     METAL   = 2·ORE + POWER   JOY   = produced by VENUEs   [JOY need]
-ORE                BRICK   = 2·CLAY + POWER
-WOOD               
-CLAY               
+price(r, tomorrow) = clamp( price(r, today) × (demand / supply)^0.5 ,
+                            0.5×base , 3×base )
 ```
 
-- Base resources flow in from WILD hexes worked by the city commons (fixed
-  trickle) and from domes whose recipes output them.
-- Selling is instant at the fixed price — the "market" is just the price
-  sheet. Buyers are: citizens (needs), domes (recipe inputs), the treasury
-  (construction). If demand exceeds supply, orders queue — scarcity shows as
-  *waiting time*, not price spikes. 💬 Q6
+- `base` (in `market.json`) only seeds day 0 and anchors the clamps.
+- Demand/supply measured over the last game day; damping exponent 0.5 keeps
+  moves felt-but-not-whipsawing. Players see today's price + a 7-day
+  sparkline. High prices ARE the founding signal: "GLASS at 2.6× — someone
+  should spark a glassworks."
 
-## 6. Upgrades — the verticals
+### 6.4 The survival start (the first sparks)
 
-Every dome can level LV.1 → LV.5 along **independent vertical tracks**
-(pre-configured in `upgrades.json`, costs paid from the dome's treasury or a
-fresh SPARKmind raise):
+The opening arc: a small commons, ~7 wild hexes revealed, and needs that
+must be met from zero. The natural founding sequence — each one a real
+spark, funded by the first citizens' hearts:
 
-| Vertical | Effect per level |
-| --- | --- |
-| **SPEED** | +1 batch per day |
-| **EFFICIENCY** | −10% recipe inputs (cheaper production) |
-| **SCALE** | +capacity (workers/residents/audience) |
-| **RESILIENCE** 🧪 | later: weather/season resistance |
+| # | Spark | Hex needs | Produces | Why first |
+| --- | --- | --- | --- | --- |
+| 1 | **The Well** | RIVER | WATER | Citizens drink daily |
+| 2 | **First Hearth** (LIVING) | MEADOW | GRAIN + HERBS, houses 6 | Food source + homes + rent |
+| 3 | **Forestry** | FOREST | WOOD | Fuel + construction |
+| 4 | **The Mill** | any | FLOUR = 2 GRAIN | First composition step |
+| 5 | **The Bakery** | any | BREAD = FLOUR+WATER+WOOD | Closes the FOOD loop |
+| 6 | **Sawmill / Kiln / Glassworks** | FOREST / RIVER / DUNES | PLANK · BRICK · GLASS | Unlocks building more domes |
 
-Upgrade raises re-open the spark for investment: new hearts in → new
-SPARKminds issued → existing holders diluted pro-rata. Every upgrade is a
-fresh "would you still invest?" moment. 💬 Q2 dilution
+Dome construction costs are material recipes too (e.g. LV.1 dome =
+8 PLANK + 6 BRICK + 4 GLASS) — so the construction chain (#6) is what turns
+a survival camp into a growing city. **The tutorial IS the economy
+bootstrapping itself.**
+
+### 6.5 Upgrade verticals
+
+Every dome levels LV.1 → LV.5 along three independent tracks (configured in
+`upgrades.json`; paid from the dome treasury or a fresh SPARKmind raise —
+each raise dilutes, each is a new "would you still invest?"):
+
+| Vertical | Effect per level | The business lever |
+| --- | --- | --- |
+| **SPEED** | +1 batch per game day | throughput |
+| **EFFICIENCY** | −10% recipe inputs | cheaper production |
+| **MARGIN** | +10% revenue per unit (quality/brand premium) | profit per unit |
+
+Level also multiplies the dividend stream (§4) — upgrades are literally
+investments in the income stream's flow rate.
 
 ## 7. Citizens & the rat race
 
-- Daily needs, paid in hearts at fixed prices: **FOOD** (1 BREAD = 6 ♥),
-  **HOME** (rent to a LIVING dome = 6 ♥), **JOY** (1 JOY = 4 ♥, post-MVP).
-- Cost of living ≈ **12–16 ♥/day** against 24 ♥ income: the default citizen
-  has ~8–12 ♥/day of investable attention. The rat race is gentle by design —
-  the pressure is opportunity cost, not starvation. 💬 Q1
-- **WORK action** (once/day): your Aven labors in the commons → +12 ♥. The
-  crutch for over-invested days; never scales.
-- **FREEDOM:** dividends ≥ cost of living for 7 consecutive days → the
-  freedom crest. The city's score: **Freedom Rate** — % of citizens free.
+**There are zero wages in this world.** Post-AGI: nobody sells labor,
+there is nothing to be employed *as*. Income is exactly two things — your
+minted 24 ♥/day (the attention UBI) and **dividend streams from SPARKminds
+you hold**. The rat race isn't about working; it's the gap between
+*consuming your UBI* and *owning enough streams that the UBI becomes pure
+investment capital*.
 
-## 8. Avens — unchanged from v0.1
+Daily needs at market prices: **WATER** (1), **FOOD** (1 BREAD), **HOME**
+(rent to a LIVING dome). At seed prices ~12 ♥/day against 24 ♥ income —
+about half your attention is survival, half is investable.
+**FREEDOM:** dividend streams ≥ cost of living for 7 straight days — your
+needs are owned, your whole UBI is free capital. City score: **Freedom
+Rate**.
 
-You instruct, your Aven runs: founding pitches, production, selling, queueing
-upgrades — all executed by your agent-CEO, reported daily. MVP: directive
-presets styled as chat. v2: free-text agents (the avenCEO thesis, in-game).
+## 8. Avens (unchanged)
+
+You instruct, your Aven runs — founding, producing, market orders, upgrade
+queues — reported daily. MVP: directive presets styled as chat; v2:
+free-text agents.
 
 ---
 
 ## 9. Tuning table (single source of truth)
 
-| Parameter | v0.2 value | Notes |
+| Parameter | v0.3 value | Notes |
 | --- | --- | --- |
-| Game day | 1 real minute | |
-| Heart income | 24 ♥/day | universal, equal |
-| Heart expiry | 7 days 💬 Q5 | keeps attention scarce |
-| Cost of living | 12 ♥/day MVP (FOOD 6 + HOME 6) | JOY adds 4 later |
-| WORK action | +12 ♥/day | fallback, never scales |
-| Spark goal (default) | 240 ♥ in 7 days | ~10 committed backers |
-| SPARKmind ratio | 1 ♥ = 1 SPARKmind | dilution via new raises |
+| Game day | **1 real hour** | year ≈ 15 real days |
+| Heart income | 24 ♥/day (1/game-hour) | universal, equal |
+| **Demurrage** | **7% per game day** on held hearts | idle ceiling ≈ 343 ♥ |
+| Wallet mint-cap | 💬 Q5 (proposal: none, demurrage only) | |
+| Cost of living | ~12 ♥/day at seed prices | WATER+BREAD+rent |
+| Wages | **none — zero labor market** | income = UBI + dividends only |
+| Dividends | stream in real time, × level multiplier | the live income stream |
+| Upgrade verticals | SPEED · EFFICIENCY · MARGIN, LV.1–5 each | 60 ♥ × current LV per step |
+| Spark goal (default) | 240 ♥ in 7 days (7 h real) | ~10 committed backers |
+| SPARKminds | 1 ♥ = 1 SPARKmind | dilution via new raises |
 | Founder min stake | 24 ♥ | skin in the game |
-| Build cost LV.1 | 120 ♥ equivalent in materials | paid by treasury |
-| Dome upkeep | 6 ♥/day, burned | the inflation sink |
-| Upgrade cost | 60 ♥ × current LV, per vertical | from dome treasury or raise |
-| FREEDOM condition | dividends ≥ living for 7 days | crest + score |
-| LIVING dome | houses 6 citizens, outputs 8 FOOD/day | permaculture baked in |
+| Dome build (LV.1) | 8 PLANK + 6 BRICK + 4 GLASS | bought at market by treasury |
+| Dome upkeep | 6 ♥/day, burned | second burn sink |
+| Market damping | exponent 0.5, clamp 0.5×–3× base | daily repricing |
+| LIVING dome | houses 6 · 8 GRAIN + 2 HERBS/day | permaculture baked in |
+| FREEDOM | dividends ≥ living, 7 days | crest + score |
 
 ## 10. 💬 Open questions
 
-1. **How harsh is the rat race?** v0.2 keeps ~50% of daily hearts free to
-   invest. Gentler = more experimentation; harsher = more drama. Where's the
-   dial?
-2. **Founder economics.** Flat pro-rata + minimum stake, or a founder bonus
-   (e.g., 10% carried interest before the pro-rata split)? And does dilution
-   on upgrade raises need an early-backer multiplier?
-3. **VENUE mechanics.** Adjacency bonus (+X% to neighbouring domes), a JOY
-   need citizens buy, or both? Simplest that makes community investable?
-4. **Treasury governance.** MVP: treasury auto-pays any funded spark's build.
-   Later: does the city vote on what gets built (hearts as votes — the same
-   token doing politics)?
-5. **Heart expiry.** Keep 7-day expiry (forces circulation) or let the
-   treasury be the only sink? Expiry punishes absence — see offline question.
-6. **Scarcity as queues.** With fixed prices, shortages become waiting lists
-   (like real supply chains) instead of price spikes. Is queue-position
-   gameplay fun, or do we need scarcity rationing rules?
-7. **Offline.** Days tick while away. Aven keeps producing (fine) — but
-   hearts accrue? Cap the buffer at 3 days (72 ♥)?
+1. **Rat-race dial.** ~50% of daily hearts free to invest — right for launch?
+2. **Founder economics.** Flat pro-rata (founder earns only what they stake)
+   or a founder bonus (e.g. 10–20% carry before the split)? Decides whether
+   people play to *found* or to *back*.
+3. **VENUE mechanics.** Adjacency bonus, a JOY need, or both?
+4. **Treasury governance.** Auto-pay any funded spark vs. city votes.
+5. **Demurrage vs. mint-cap.** Is 7%/day melt enough pressure, or also pause
+   minting above a wallet cap? (Two knobs doing one job smells like one too
+   many.)
+6. **Biome balance.** 5 biomes × 2 resources is clean — but should some hexes
+   be resource-poor on purpose (pure real-estate plays for LIVING/VENUE)?
+7. **Offline.** At 1 h/day, a working person misses ~8 game days overnight
+   (~192 ♥ minted, melting at 7%). Acceptable as-is, or does the Aven need a
+   standing "auto-invest my hearts into X" directive? (My take: the standing
+   directive IS the elegant fix — and very on-thesis.)
 
 ---
 
-*Living document — v0.2. Argue in §10; promote settled answers into the spec.*
+*Living document — v0.3. Argue in §10; promote settled answers into the spec.*

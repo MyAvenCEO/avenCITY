@@ -1,16 +1,24 @@
 <script lang="ts">
 	import Wordmark from '$lib/components/Wordmark.svelte';
 
+	const biomes = [
+		{ name: 'RIVER', resources: 'WATER · CLAY' },
+		{ name: 'FOREST', resources: 'WOOD · HERBS' },
+		{ name: 'MOUNTAIN', resources: 'STONE · ORE' },
+		{ name: 'MEADOW', resources: 'GRAIN · FIBER' },
+		{ name: 'DUNES', resources: 'SAND · SUN' }
+	];
+
 	const domeTypes = [
 		{
 			name: 'LIVING',
 			what: 'Housing with integrated permaculture — the gardens are part of the architecture.',
-			produces: 'Always FOOD, plus homes for citizens (rent).'
+			produces: 'GRAIN + HERBS daily, plus homes for citizens (rent).'
 		},
 		{
 			name: 'FACTORY',
-			what: 'A production hall running exactly one recipe from the city recipe book.',
-			produces: "The recipe's output resource, batch by batch."
+			what: 'Extraction or production, running exactly one recipe from the city recipe book.',
+			produces: "The recipe's output, batch by batch."
 		},
 		{
 			name: 'VENUE',
@@ -19,31 +27,43 @@
 		}
 	];
 
+	const starterSparks = [
+		{ n: 1, name: 'The Well', hex: 'RIVER', why: 'WATER — citizens drink daily' },
+		{ n: 2, name: 'First Hearth (LIVING)', hex: 'MEADOW', why: 'grain, herbs, homes for 6' },
+		{ n: 3, name: 'Forestry', hex: 'FOREST', why: 'WOOD — fuel and construction' },
+		{ n: 4, name: 'The Mill', hex: 'any', why: 'FLOUR = 2 GRAIN — first composition' },
+		{ n: 5, name: 'The Bakery', hex: 'any', why: 'BREAD = FLOUR + WATER + WOOD — closes the food loop' },
+		{ n: 6, name: 'Sawmill · Kiln · Glassworks', hex: 'FOREST · RIVER · DUNES', why: 'PLANK, BRICK, GLASS — building the next domes' }
+	];
+
 	const verticals = [
-		{ name: 'Speed', effect: '+1 production batch per day' },
+		{ name: 'Speed', effect: '+1 batch per game day — throughput' },
 		{ name: 'Efficiency', effect: '−10% recipe inputs per level — cheaper production' },
-		{ name: 'Scale', effect: 'More capacity: workers, residents, audience' }
+		{ name: 'Margin', effect: '+10% revenue per unit — quality and brand premium' }
 	];
 
 	const tuning = [
-		{ p: 'Game day', v: '1 real minute' },
-		{ p: 'Heart income', v: '24 ♥ / day — universal, equal' },
-		{ p: 'Cost of living', v: '12 ♥ / day (FOOD 6 + HOME 6)' },
-		{ p: 'Spark goal', v: '240 ♥ within 7 days' },
+		{ p: 'Time', v: '1 real day = 24 game days' },
+		{ p: 'Heart income', v: '24 ♥ / game day — universal, equal' },
+		{ p: 'Demurrage', v: '7% per game day on held hearts' },
+		{ p: 'Wages', v: 'none — income is UBI + dividends only' },
+		{ p: 'Cost of living', v: '~12 ♥ / day at seed prices' },
+		{ p: 'Spark goal', v: '240 ♥ within 7 game days' },
 		{ p: 'SPARKminds', v: '1 ♥ invested = 1 SPARKmind' },
-		{ p: 'Founder stake', v: 'min 24 ♥ — skin in the game' },
-		{ p: 'Dome upkeep', v: '6 ♥ / day, burned' },
+		{ p: 'Dividends', v: 'stream in real time, × level' },
+		{ p: 'Dome build LV.1', v: '8 PLANK + 6 BRICK + 4 GLASS' },
+		{ p: 'Market', v: 'open — damped daily, clamped 0.5×–3× base' },
 		{ p: 'Freedom', v: 'dividends ≥ living costs, 7 days straight' }
 	];
 
 	const questions = [
-		'How harsh is the rat race — how much of the daily 24 ♥ stays free to invest?',
+		'Rat-race dial: ~half of daily hearts free to invest — right for launch?',
 		'Founder economics: flat pro-rata, or a founder bonus before the split?',
 		'VENUE mechanics: adjacency bonus, a JOY need, or both?',
 		'Treasury governance: auto-pay funded sparks, or city votes with hearts?',
-		'Heart expiry: keep the 7-day use-it-or-lose-it, or is upkeep sink enough?',
-		'Fixed prices mean shortages become queues — is waiting-list gameplay fun?',
-		'Offline: cap the heart buffer at 3 days (72 ♥)?'
+		'Is 7%/day demurrage enough pressure, or also pause minting above a wallet cap?',
+		'Biome balance: should some hexes be resource-poor on purpose — pure real-estate plays?',
+		'Offline: overnight ≈ 8 game days of melting hearts — is a standing "auto-invest" Aven directive the fix?'
 	];
 </script>
 
@@ -51,7 +71,7 @@
 	<title>avenCITY — living concept paper</title>
 	<meta
 		name="description"
-		content="The avenCITY game concept: hexagons, domes, sparks and SPARKminds. One currency, fixed prices, JSON recipes. Draft v0.2 — for discussion."
+		content="The avenCITY game concept v0.3: biome hexes, domes, sparks and SPARKminds. One melting currency, open market, JSON recipes, zero wages."
 	/>
 </svelte:head>
 
@@ -68,7 +88,7 @@
 			<span class="pulse-dot" aria-hidden="true"></span>
 			Living concept paper
 		</span>
-		<span class="chip label">Draft v0.2 — for discussion</span>
+		<span class="chip label">Draft v0.3 — for discussion</span>
 	</div>
 
 	<h1 class="mt-6 text-display">
@@ -76,23 +96,32 @@
 		<em class="italic">and the minds that own them.</em>
 	</h1>
 	<p class="mt-6 max-w-2xl text-lead font-light text-ink-soft">
-		The whole game is hexagons on a map. One currency, fixed prices, recipes as data.
-		Radically simple on purpose — depth comes from composition, not simulation complexity.
+		The whole game is hexagons on a map. One melting currency, an open market, recipes as
+		data, zero wages. Radically simple on purpose — depth comes from composition and
+		ownership, not simulation complexity.
 	</p>
 
 	<!-- 01 · The board -->
 	<section class="mt-20">
-		<h2 class="label text-amber-deep">01 — The board</h2>
+		<h2 class="label text-amber-deep">01 — The board: hexes &amp; biomes</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			The city is a hex map, and the map is the whole UI. Every hex is a parcel: wild
-			nature until a spark develops it, then a dome producing every day. The city grows one
-			funded spark at a time — <strong class="font-medium text-ink"
-				>every dome on the map is a business somebody believed in.</strong
-			> The map is the cap table of the city.
+			The city is a hex map, and the map is the whole UI. <strong
+				class="font-medium text-ink">Every hex is composed of 1 or 2 biomes</strong
+			>, and biomes carry the natural resources — five biomes cover all ten base resources.
+			A RIVER + FOREST hex offers four resources; hex value is its biome combination. You
+			cannot found a waterworks on a dune.
 		</p>
+		<div class="panel mt-6 divide-y divide-hairline">
+			{#each biomes as b}
+				<div class="flex items-baseline justify-between gap-6 px-7 py-4">
+					<span class="pill-ink label">{b.name}</span>
+					<span class="font-mono text-meta text-ink">{b.resources}</span>
+				</div>
+			{/each}
+		</div>
 		<div class="well mt-6 overflow-x-auto px-6 py-5">
 			<code class="font-mono text-meta whitespace-nowrap text-ink">
-				WILD ──(spark funded + built)──▶ DOME ──(upgrades)──▶ DOME LV.2–5
+				WILD (biomes visible) ──(spark funded + built)──▶ DOME ──(upgrades)──▶ LV.2–5
 			</code>
 		</div>
 	</section>
@@ -109,23 +138,19 @@
 				</div>
 			{/each}
 		</div>
-		<p class="mt-5 max-w-2xl text-meta text-ink-faint">
-			Living domes make the city self-feeding by construction — food is never an industry
-			someone forgot to build. Venues make community a first-class investment, not
-			decoration.
-		</p>
 	</section>
 
 	<!-- 03 · Sparks & SPARKminds -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">03 — Sparks &amp; SPARKminds</h2>
+		<h2 class="label text-amber-deep">03 — Sparks, SPARKminds &amp; live dividends</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			A spark is a proposal to develop a hex: which parcel, which dome, which recipe.
-			Players invest hearts; investors receive <strong class="font-medium text-ink"
-				>SPARKminds</strong
-			> — pro-rata shares of that dome, 1 ♥ = 1 SPARKmind. The hearts themselves flow into
-			the City Treasury and become the city's working currency: it pays the build cost by
-			buying materials from the city's own factories.
+			A spark proposes: which hex, which dome, which recipe. Investors' hearts mint
+			<strong class="font-medium text-ink">SPARKminds 1:1</strong> — pro-rata shares of that
+			dome — while the hearts pool in the City Treasury, which pays construction by buying
+			materials from the city's own factories at market price.
+			<strong class="font-medium text-ink">Dividends stream in real time</strong>, scaled by
+			the spark's level: your hearts tick upward live. Watching a stream you own flow is the
+			core dopamine of the game.
 		</p>
 		<div class="well mt-6 overflow-x-auto px-6 py-5">
 			<pre class="font-mono text-meta leading-relaxed text-ink">{`founder pitches a SPARK on a wild hex
@@ -139,51 +164,95 @@ HEARTS pool in the CITY TREASURY
      ▼
 goal reached in time?
   ├─ NO  → every heart refunded
-  └─ YES → treasury pays the build → the dome rises
-           → dividends flow to SPARKmind holders, daily`}</pre>
+  └─ YES → treasury buys materials → the dome rises
+           → dividends STREAM to SPARKmind holders, live`}</pre>
 		</div>
 	</section>
 
-	<!-- 04 · Recipes -->
+	<!-- 04 · Hearts & demurrage -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">04 — One recipe engine, everything is data</h2>
+		<h2 class="label text-amber-deep">04 — Hearts: minted daily, melting slowly</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			Minecraft-style composition: a handful of base resources recombine into higher-order
-			goods through a universal recipe engine. Recipes, prices and build costs are all
-			pre-configured JSON — no open market, no price discovery. Scarcity shows as waiting
-			time, not price spikes.
+			Everyone mints <strong class="font-medium text-ink">24 ♥ per game day</strong> — one
+			real day is 24 game days. Held hearts melt at
+			<strong class="font-medium text-ink">7% demurrage per game day</strong>: attention
+			can't be hoarded, an idle wallet plateaus around 343 ♥ no matter how long you wait.
+			Invested hearts don't melt — <em class="italic"
+				>the only way to store attention is to own something with it.</em
+			> And there are zero wages in this world: income is your UBI and your dividend streams.
+			Nothing else exists.
+		</p>
+	</section>
+
+	<!-- 05 · Recipes & market -->
+	<section class="mt-16">
+		<h2 class="label text-amber-deep">05 — Configured recipes, discovered prices</h2>
+		<p class="mt-4 max-w-2xl text-body text-ink-soft">
+			Only the composition layer is pre-configured: what goes in, what comes out, which
+			dome can run it — Minecraft-style, all JSON. What things <em class="italic">cost</em>
+			is discovered on one open market, lightly damped so prices move but never whipsaw.
+			High prices are the founding signal: GLASS at 2.6× base means the city needs a
+			glassworks — and someone will spark one.
 		</p>
 		<div class="mt-6 grid gap-6 md:grid-cols-2">
 			<div class="well overflow-x-auto px-6 py-5">
 				<pre class="font-mono text-meta leading-relaxed text-ink">{`// recipes.json
 {
   "id": "bake_bread",
-  "inputs": { "FLOUR": 2, "WATER": 1 },
-  "output": { "BREAD": 1 },
-  "minutesPerBatch": 1,
-  "domeType": "FACTORY"
+  "dome": "FACTORY",
+  "inputs": {
+    "FLOUR": 1,
+    "WATER": 1,
+    "WOOD":  1
+  },
+  "output": { "BREAD": 2 }
 }`}</pre>
 			</div>
 			<div class="well overflow-x-auto px-6 py-5">
-				<pre class="font-mono text-meta leading-relaxed text-ink">{`// prices.json — fixed
-{
-  "GRAIN": 1,
-  "WATER": 1,
-  "FLOUR": 2,
-  "POWER": 2,
-  "BREAD": 6
-}`}</pre>
+				<pre class="font-mono text-meta leading-relaxed text-ink">{`// market: open, damped
+price(tomorrow) =
+  price(today)
+  × (demand / supply)^0.5
+
+clamped 0.5× – 3× base
+repriced every game day`}</pre>
 			</div>
 		</div>
 	</section>
 
-	<!-- 05 · Upgrades -->
+	<!-- 06 · Survival start -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">05 — Upgrade verticals</h2>
+		<h2 class="label text-amber-deep">06 — The survival start</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			Every dome levels LV.1 → LV.5 along independent tracks. An upgrade raise re-opens the
-			spark: new hearts in, new SPARKminds issued — every level is a fresh "would you still
-			invest?" moment.
+			Ten base resources — <span class="font-mono text-meta"
+				>WATER · WOOD · STONE · ORE · SAND · CLAY · GRAIN · FIBER · HERBS · SUN</span
+			> — a small commons, seven wild hexes, and needs that must be met from zero. The
+			founding sequence is the tutorial, and the tutorial is the economy bootstrapping
+			itself:
+		</p>
+		<div class="panel mt-6 divide-y divide-hairline">
+			{#each starterSparks as s}
+				<div class="grid gap-2 px-7 py-4 sm:grid-cols-[2rem_minmax(10rem,14rem)_8rem_1fr] sm:items-baseline sm:gap-4">
+					<span class="font-display text-title text-hairline">{s.n}</span>
+					<span class="text-body font-medium text-ink">{s.name}</span>
+					<span class="label text-ink-faint">{s.hex}</span>
+					<span class="text-meta text-ink-soft">{s.why}</span>
+				</div>
+			{/each}
+		</div>
+		<p class="mt-5 max-w-2xl text-meta text-ink-faint">
+			Dome construction costs are recipes too — LV.1 needs 8 PLANK + 6 BRICK + 4 GLASS —
+			so the construction chain is what turns a survival camp into a growing city.
+		</p>
+	</section>
+
+	<!-- 07 · Upgrades -->
+	<section class="mt-16">
+		<h2 class="label text-amber-deep">07 — Upgrade verticals</h2>
+		<p class="mt-4 max-w-2xl text-body text-ink-soft">
+			Every dome levels LV.1 → LV.5 along three independent tracks. Upgrades are paid from
+			the dome treasury or a fresh SPARKmind raise — new hearts in, new shares issued,
+			every level a fresh "would you still invest?". Level multiplies the dividend stream.
 		</p>
 		<div class="panel mt-6 divide-y divide-hairline">
 			{#each verticals as v}
@@ -195,35 +264,35 @@ goal reached in time?
 		</div>
 	</section>
 
-	<!-- 06 · The rat race -->
+	<!-- 08 · Freedom -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">06 — Citizens, needs, freedom</h2>
+		<h2 class="label text-amber-deep">08 — The rat race &amp; freedom</h2>
 		<p class="mt-4 max-w-2xl text-body text-ink-soft">
-			Every citizen receives 24 ♥ a day and pays ~12 ♥ for needs — food and home. What's
-			left is investable attention. Your Aven can work the commons for +12 ♥ when you're
-			overextended, but wages never scale. <strong class="font-medium text-ink"
+			Needs — water, food, home — cost about half your daily hearts at seed prices; the
+			other half is investable attention. <strong class="font-medium text-ink"
 				>Freedom is the win:</strong
-			> when dividends cover your cost of living for 7 straight days, you're out of the rat
-			race — and the city's score is its Freedom Rate: the share of citizens who made it out.
+			> when your dividend streams cover your cost of living for 7 straight days, your whole
+			UBI becomes free capital. The city's score is its Freedom Rate — the share of citizens
+			who own their way out.
 		</p>
 	</section>
 
-	<!-- 07 · Tuning -->
+	<!-- 09 · Tuning -->
 	<section class="mt-16">
-		<h2 class="label text-amber-deep">07 — Tuning table</h2>
+		<h2 class="label text-amber-deep">09 — Tuning table</h2>
 		<div class="panel mt-6 divide-y divide-hairline">
 			{#each tuning as row}
 				<div class="flex items-baseline justify-between gap-6 px-7 py-4">
 					<span class="label text-ink-faint">{row.p}</span>
-					<span class="font-mono text-meta text-ink">{row.v}</span>
+					<span class="text-right font-mono text-meta text-ink">{row.v}</span>
 				</div>
 			{/each}
 		</div>
 	</section>
 
-	<!-- 08 · Open questions -->
+	<!-- 10 · Open questions -->
 	<section class="mt-16 mb-24">
-		<h2 class="label text-amber-deep">08 — Open questions</h2>
+		<h2 class="label text-amber-deep">10 — Open questions</h2>
 		<div class="plate mt-6 p-8">
 			<ol class="list-decimal space-y-3 pl-5">
 				{#each questions as q}
