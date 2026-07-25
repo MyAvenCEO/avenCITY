@@ -1,0 +1,89 @@
+/* avenCITY typefaces — self-hosted woff2, so the site renders offline and
+ * identically everywhere. No network font fetch, no third-party request.
+ *
+ * TWO VOICES, ON PURPOSE:
+ *   Chillax    — the organic voice. Soft geometric sans with rounded terminals;
+ *                it carries headlines, the wordmark and body copy. Nature, not
+ *                machinery. Display sizes run Light (300); the same line in
+ *                Bold (700) is how the wordmark and emphasis are built.
+ *   AzeretMono — the technical voice. Monospace, used ONLY for small uppercase
+ *                labels, eyebrows, spec figures and meta. It is the engineering
+ *                annotation on the blueprint — 150M DIAMETER, DAY 001 / 5423.
+ *
+ * Never swap the two. Chillax says "this is a place"; Azeret says "these are
+ * its measurements". Mixing them collapses the whole identity.
+ */
+
+/* --- Chillax: display + body ------------------------------------------- */
+@font-face {
+	font-family: 'Chillax';
+	src: url('../assets/fonts/Chillax-Light.woff2') format('woff2');
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Chillax';
+	src: url('../assets/fonts/Chillax-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Chillax';
+	src: url('../assets/fonts/Chillax-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Chillax';
+	src: url('../assets/fonts/Chillax-Semibold.woff2') format('woff2');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Chillax';
+	src: url('../assets/fonts/Chillax-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* --- Azeret Mono: labels, specs, meta ----------------------------------- */
+@font-face {
+	font-family: 'AzeretMono';
+	src: url('../assets/fonts/AzeretMono-ExtraLight.woff2') format('woff2');
+	font-weight: 200;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'AzeretMono';
+	src: url('../assets/fonts/AzeretMono-Light.woff2') format('woff2');
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'AzeretMono';
+	src: url('../assets/fonts/AzeretMono-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'AzeretMono';
+	src: url('../assets/fonts/AzeretMono-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'AzeretMono';
+	src: url('../assets/fonts/AzeretMono-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+}

@@ -1,1 +1,7 @@
 @import 'tailwindcss';
+
+/* The avenCITY design system. Order matters: faces, then tokens, then the
+ * base/component layer that consumes them. See tokens.css for the CI rationale. */
+@import '../lib/styles/fonts.css';
+@import '../lib/styles/tokens.css';
+@import '../lib/styles/base.css';

@@ -1,0 +1,131 @@
+/* ============================================================================
+ * avenCITY — Corporate Identity tokens
+ * "Liquid Glass on Living Nature"
+ * ============================================================================
+ *
+ * THE IDEA
+ * Maia City is glass domes standing in a jungle. So the identity is exactly
+ * that, and nothing else: LIVING NATURE is the ground layer — real renders of
+ * the city, lush and warm and photographic — and everything the interface says
+ * sits on LIQUID GLASS floating above it.
+ *
+ * The glass is not a decorative filter. It is the brand's argument: you can
+ * put a built thing on top of a living thing without hiding it. Every panel is
+ * translucent, so the jungle keeps showing through whatever we build on it.
+ * The moment a surface goes opaque, that argument dies — so opaque panels are
+ * off-brand unless legibility genuinely demands it.
+ *
+ * THE PALETTE IS SAMPLED, NOT INVENTED.
+ * Every colour below is pulled from the city renders in ../assets/images:
+ * the lagoon water, the palm canopy, the bamboo struts, the sunlit stone.
+ * That is why the glass sits so naturally on the photo — the UI is wearing the
+ * photograph's own colours. If a new brand colour is ever needed, sample it
+ * from a render; do not pick it from a colour wheel.
+ *
+ * NO PURE BLACK, NO PURE WHITE. Nothing in a jungle is #000 or #FFF.
+ * ========================================================================= */
+
+@theme {
+	/* --- Canopy: the greens, from shadow to sunlit leaf ------------------- */
+	--color-canopy-deep: #0e1f18; /* deepest jungle shadow — page floor, text */
+	--color-canopy: #163024; /* primary brand green */
+	--color-canopy-soft: #2c5340; /* raised green surfaces */
+	--color-moss: #4f8a5b; /* mid foliage — secondary accent */
+	--color-frond: #9fc08c; /* sunlit palm — soft green, muted text on dark */
+
+	/* --- Lagoon: the water. The primary accent. --------------------------- */
+	/* That turquoise is the single most recognisable thing in the renders,
+	 * so it carries every primary action, link and live state. */
+	--color-lagoon: #17a5a5;
+	--color-lagoon-bright: #2cc5be; /* hover, glow, active */
+	--color-lagoon-deep: #0e6b70; /* pressed, borders on light */
+
+	/* --- Bamboo & stone: the built warmth ---------------------------------- */
+	/* The dome struts and the masonry. Used for the human/handmade register —
+	 * secondary buttons, quotes, anything the fellowship said or made. */
+	--color-bamboo: #c9a87c;
+	--color-bamboo-bright: #ddc39b;
+	--color-stone: #8d8577;
+
+	/* --- Sky & bone: the light --------------------------------------------- */
+	--color-sky: #7fb6dc; /* the blue above the dome */
+	--color-bone: #f2ebdd; /* warm sand — light surfaces */
+	--color-chalk: #fbf8f1; /* primary text on dark; never #FFF */
+	--color-chalk-muted: #d8dcd2; /* secondary text on glass */
+	--color-chalk-faint: #a9b2a6; /* meta only, 12px+ — do not use for body */
+
+	/* --- Status ------------------------------------------------------------ */
+	--color-ok: #5bc98c;
+	--color-warn: #e0a83f;
+	--color-fail: #d9644a;
+
+	/* --- Type -------------------------------------------------------------- */
+	--font-display: 'Chillax', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Chillax', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'AzeretMono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	/* Display sizes are fluid; reading sizes are fixed so the rhythm never
+	 * wobbles between breakpoints. */
+	--text-hero: clamp(2.75rem, 7.5vw, 6rem);
+	--text-hero--line-height: 0.95;
+	--text-display: clamp(1.875rem, 4vw, 3rem);
+	--text-display--line-height: 1.08;
+	--text-title: 1.375rem;
+	--text-title--line-height: 1.3;
+	--text-lead: 1.125rem;
+	--text-lead--line-height: 1.6;
+	--text-body: 1rem;
+	--text-body--line-height: 1.7;
+	--text-meta: 0.8125rem;
+	--text-meta--line-height: 1.55;
+	--text-label: 0.6875rem; /* always uppercase, always tracked out */
+	--text-label--line-height: 1.4;
+
+	/* --- Geometry ---------------------------------------------------------- */
+	/* Glass wants generous, liquid corners — a hard 4px edge reads as plastic.
+	 * Panels are the default; the lens is for large hero cards. */
+	--radius-chip: 999px;
+	--radius-panel: 1.25rem;
+	--radius-lens: 2rem;
+
+	/* --- Motion ------------------------------------------------------------ */
+	/* One curve. Glass should settle, not snap. */
+	--ease-city: cubic-bezier(0.22, 0.61, 0.24, 1);
+	--duration-quick: 180ms;
+	--duration-settle: 420ms;
+}
+
+/* ---------------------------------------------------------------------------
+ * Glass recipe
+ * ---------------------------------------------------------------------------
+ * Compositions, not scale steps, so they live outside @theme and are consumed
+ * by the .glass-* classes in base.css.
+ *
+ * A convincing pane needs FOUR layers, and dropping any one of them is what
+ * makes most "glassmorphism" look like a grey box:
+ *   1. tint      — a barely-there wash so text has something to sit on
+ *   2. blur      — backdrop-filter, plus saturate() to keep the jungle vivid
+ *                  behind it instead of going muddy grey
+ *   3. hairline  — a light 1px border; glass has an EDGE
+ *   4. highlight — an inset top gleam, the light catching the top curve
+ * ------------------------------------------------------------------------ */
+:root {
+	--glass-tint: rgb(255 255 255 / 0.1);
+	--glass-tint-strong: rgb(255 255 255 / 0.16);
+	--glass-tint-dark: rgb(14 31 24 / 0.34);
+
+	--glass-edge: rgb(255 255 255 / 0.26);
+	--glass-edge-strong: rgb(255 255 255 / 0.42);
+
+	--glass-blur: 20px;
+	--glass-blur-deep: 36px;
+	--glass-saturate: 1.5;
+
+	/* Inset gleam along the top edge + a soft drop so the pane reads as
+	 * floating above the photograph rather than cut into it. */
+	--glass-highlight: inset 0 1px 0 0 rgb(255 255 255 / 0.34);
+	--glass-lift:
+		0 1px 2px rgb(14 31 24 / 0.18), 0 12px 32px -8px rgb(14 31 24 / 0.42);
+	--glass-lift-high:
+		0 2px 4px rgb(14 31 24 / 0.2), 0 28px 64px -12px rgb(14 31 24 / 0.55);
+}

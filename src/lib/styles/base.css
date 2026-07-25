@@ -1,0 +1,205 @@
+/* ============================================================================
+ * avenCITY — base styles + glass primitives
+ * ============================================================================
+ * Everything here is a component class rather than a Tailwind utility pile,
+ * because the glass recipe is four properties that must travel together (see
+ * the note in tokens.css). Scattering them across class attributes is how the
+ * effect drifts and breaks.
+ * ========================================================================= */
+
+@layer base {
+	:root {
+		/* The identity is a night-jungle photograph; tell the browser so form
+		 * controls, scrollbars and selection follow instead of guessing. */
+		color-scheme: dark;
+	}
+
+	html {
+		-webkit-text-size-adjust: 100%;
+	}
+
+	body {
+		background-color: var(--color-canopy-deep);
+		color: var(--color-chalk);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		line-height: var(--text-body--line-height);
+		font-weight: 400;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	/* Headings run LIGHT and tight. Chillax at weight 300 with negative
+	 * tracking is the house display voice; bold is reserved for the wordmark
+	 * and deliberate emphasis inside a heading. */
+	h1,
+	h2,
+	h3 {
+		font-family: var(--font-display);
+		font-weight: 300;
+		letter-spacing: -0.03em;
+		text-wrap: balance;
+	}
+
+	::selection {
+		background-color: var(--color-lagoon);
+		color: var(--color-canopy-deep);
+	}
+
+	/* One focus style everywhere — lagoon, offset, never removed. */
+	:focus-visible {
+		outline: 2px solid var(--color-lagoon-bright);
+		outline-offset: 3px;
+		border-radius: 4px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}
+
+@layer components {
+	/* --- Glass panes ------------------------------------------------------- */
+	/* .glass is the base pane. The four layers of the recipe, together. */
+	.glass {
+		position: relative;
+		background-color: var(--glass-tint);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		border: 1px solid var(--glass-edge);
+		border-radius: var(--radius-panel);
+		box-shadow: var(--glass-highlight), var(--glass-lift);
+	}
+
+	/* Hero-scale pane: deeper blur, stronger edge, bigger lift. Use sparingly —
+	 * one per viewport, or the depth hierarchy flattens out. */
+	.glass-lens {
+		position: relative;
+		background-color: var(--glass-tint-strong);
+		backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate));
+		-webkit-backdrop-filter: blur(var(--glass-blur-deep)) saturate(var(--glass-saturate));
+		border: 1px solid var(--glass-edge-strong);
+		border-radius: var(--radius-lens);
+		box-shadow: var(--glass-highlight), var(--glass-lift-high);
+	}
+
+	/* Darker pane for when text must win over a bright/busy part of the photo.
+	 * Still translucent — the jungle must stay visible. */
+	.glass-shade {
+		position: relative;
+		background-color: var(--glass-tint-dark);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		border: 1px solid var(--glass-edge);
+		border-radius: var(--radius-panel);
+		box-shadow: var(--glass-highlight), var(--glass-lift);
+	}
+
+	/* --- Labels ------------------------------------------------------------ */
+	/* The engineering annotation. Mono, uppercase, tracked wide. */
+	.label {
+		font-family: var(--font-mono);
+		font-size: var(--text-label);
+		line-height: var(--text-label--line-height);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.16em;
+	}
+
+	/* A label wearing a glass chip — the "4K RESOLUTION" pill from the refs. */
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4375rem 0.875rem;
+		border-radius: var(--radius-chip);
+		background-color: var(--glass-tint);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		border: 1px solid var(--glass-edge);
+		box-shadow: var(--glass-highlight);
+		color: var(--color-chalk);
+		white-space: nowrap;
+	}
+
+	/* --- Buttons ----------------------------------------------------------- */
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.625rem;
+		padding: 0.875rem 1.5rem;
+		border-radius: var(--radius-chip);
+		font-family: var(--font-mono);
+		font-size: var(--text-label);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		cursor: pointer;
+		border: 1px solid transparent;
+		transition:
+			background-color var(--duration-quick) var(--ease-city),
+			border-color var(--duration-quick) var(--ease-city),
+			box-shadow var(--duration-quick) var(--ease-city),
+			transform var(--duration-quick) var(--ease-city);
+	}
+
+	.btn:active {
+		transform: translateY(1px);
+	}
+
+	/* Primary = lagoon. The water is the call to action. */
+	.btn-primary {
+		background-color: var(--color-lagoon);
+		color: var(--color-canopy-deep);
+		box-shadow: 0 8px 24px -8px rgb(23 165 165 / 0.7);
+	}
+	.btn-primary:hover {
+		background-color: var(--color-lagoon-bright);
+		box-shadow: 0 10px 30px -8px rgb(44 197 190 / 0.85);
+	}
+
+	/* Secondary = glass. Sits on the photo without competing with primary. */
+	.btn-glass {
+		background-color: var(--glass-tint);
+		backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+		border-color: var(--glass-edge);
+		color: var(--color-chalk);
+		box-shadow: var(--glass-highlight), var(--glass-lift);
+	}
+	.btn-glass:hover {
+		background-color: var(--glass-tint-strong);
+		border-color: var(--glass-edge-strong);
+	}
+
+	/* --- Live dot ----------------------------------------------------------- */
+	/* Marks anything currently happening — MAIA writing, a day in progress. */
+	.pulse-dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 999px;
+		background-color: var(--color-lagoon-bright);
+		box-shadow: 0 0 0 0 rgb(44 197 190 / 0.6);
+		animation: pulse-ring 2.4s var(--ease-city) infinite;
+	}
+
+	@keyframes pulse-ring {
+		0% {
+			box-shadow: 0 0 0 0 rgb(44 197 190 / 0.6);
+		}
+		70% {
+			box-shadow: 0 0 0 0.5rem rgb(44 197 190 / 0);
+		}
+		100% {
+			box-shadow: 0 0 0 0 rgb(44 197 190 / 0);
+		}
+	}
+}
