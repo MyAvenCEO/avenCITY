@@ -1,19 +1,31 @@
 /**
  * Procedural hex island generation — pure data, no rendering.
  *
- * Shape: an organic blob grown from the center hex.
- * Biomes: Voronoi over seeded region centers, so biomes form coherent
- * patches. Hexes near a region border become TWO-biome hexes, split along
- * the direction to the neighbouring region — borders read as natural
- * transitions, exactly where you'd expect mixed terrain.
+ * Shape: an organic land blob grown from the center, wrapped in a >=5-hex
+ * thick ring of SEA tiles — the world is always an island (Catan rule).
+ * Biomes: Voronoi over seeded region centers with low jitter, so biomes
+ * form large coherent clusters. Water is special-cased: exactly ONE
+ * connected RIVER body survives generation (one lake/river/sea arm) —
+ * stray water hexes are reassigned to their nearest dry biome.
  * Diversity: every hex carries its own 32-bit seed (hash of coords + world
  * seed) — decoration counts, positions, scales and hue jitter all derive
  * from it, so no two FOREST hexes are the same forest.
  */
 import { hash2, makeRng } from './rng';
+import biomesConfig from '../../../game/config/biomes.json';
 
 export const BIOME_IDS = ['RIVER', 'FOREST', 'MOUNTAIN', 'MEADOW', 'DUNES'] as const;
 export type BiomeId = (typeof BIOME_IDS)[number];
+
+/** biome -> natural resources, straight from game/config/biomes.json. */
+export const BIOME_RESOURCES: Record<BiomeId, string[]> = Object.fromEntries(
+	biomesConfig.biomes.map((b) => [b.id, Object.keys(b.resources)])
+) as Record<BiomeId, string[]>;
+
+/** All resources a tile's biomes can (potentially) output. */
+export function tileResources(tile: Pick<HexTile, 'biomes'>): string[] {
+	return [...new Set(tile.biomes.flatMap((b) => BIOME_RESOURCES[b]))];
+}
 
 export interface HexTile {
 	q: number;
@@ -21,8 +33,9 @@ export interface HexTile {
 	/** world-space center (flat-top layout, unit hex radius = 1) */
 	x: number;
 	z: number;
-	/** 1 or 2 biomes; [primary] or [primary, secondary] */
-	biomes: [BiomeId] | [BiomeId, BiomeId];
+	kind: 'LAND' | 'SEA';
+	/** 1-2 biomes for land, empty for sea */
+	biomes: BiomeId[];
 	/** split direction (radians, world xz) — secondary biome lies on +side */
 	splitDir: number;
 	/** per-hex seed for all visual variation */
@@ -34,7 +47,7 @@ export interface HexWorld {
 	tiles: HexTile[];
 }
 
-const AXIAL_DIRS: ReadonlyArray<[number, number]> = [
+export const AXIAL_DIRS: ReadonlyArray<[number, number]> = [
 	[1, 0],
 	[1, -1],
 	[0, -1],
@@ -42,6 +55,8 @@ const AXIAL_DIRS: ReadonlyArray<[number, number]> = [
 	[-1, 1],
 	[0, 1]
 ];
+
+export const key = (q: number, r: number) => `${q},${r}`;
 
 function axialToWorld(q: number, r: number): { x: number; z: number } {
 	// flat-top layout, hex radius 1
@@ -58,13 +73,10 @@ function axialDistance(aq: number, ar: number, bq: number, br: number): number {
 function growBlob(seed: number, target: number): Array<[number, number]> {
 	const rng = makeRng(seed ^ 0x51ab);
 	const taken = new Map<string, [number, number]>();
-	const key = (q: number, r: number) => `${q},${r}`;
 	const frontier: Array<[number, number]> = [[0, 0]];
 	taken.set(key(0, 0), [0, 0]);
 
 	while (taken.size < target && frontier.length > 0) {
-		// pick a random frontier hex, biased toward earlier (inner) entries so
-		// the blob stays compact instead of snaking
 		const idx = Math.floor(Math.pow(rng.next(), 1.6) * frontier.length);
 		const [q, r] = frontier[idx];
 		const dirs = [...AXIAL_DIRS].sort(() => rng.next() - 0.5);
@@ -84,50 +96,154 @@ function growBlob(seed: number, target: number): Array<[number, number]> {
 	return [...taken.values()];
 }
 
+interface RegionCenter {
+	q: number;
+	r: number;
+	biome: BiomeId;
+}
+
+/** Scatter region centers over the blob, spaced apart, exactly one RIVER. */
+function placeRegions(rng: ReturnType<typeof makeRng>, cells: Array<[number, number]>): RegionCenter[] {
+	const count = rng.int(4, 6);
+	// exactly one water region; land biomes fill the rest (all appear once
+	// before repeats, so every world has variety)
+	const land: BiomeId[] = ['FOREST', 'MOUNTAIN', 'MEADOW', 'DUNES'];
+	const biomes: BiomeId[] = ['RIVER', ...land];
+	while (biomes.length < count) biomes.push(land[rng.int(0, land.length - 1)]);
+	for (let i = biomes.length - 1; i > 0; i--) {
+		const j = rng.int(0, i);
+		[biomes[i], biomes[j]] = [biomes[j], biomes[i]];
+	}
+
+	const centers: RegionCenter[] = [];
+	for (const biome of biomes.slice(0, count)) {
+		let best: [number, number] = rng.pick(cells);
+		for (let attempt = 0; attempt < 12; attempt++) {
+			const candidate = rng.pick(cells);
+			const minDist = Math.min(
+				Infinity,
+				...centers.map((c) => axialDistance(candidate[0], candidate[1], c.q, c.r))
+			);
+			if (minDist >= 3) {
+				best = candidate;
+				break;
+			}
+			best = candidate;
+		}
+		centers.push({ q: best[0], r: best[1], biome });
+	}
+	return centers;
+}
+
 export function generateMap(seed: number, size = 40): HexWorld {
 	const rng = makeRng(seed);
 	const cells = growBlob(seed, size);
+	const landSet = new Set(cells.map(([q, r]) => key(q, r)));
+	const centers = placeRegions(rng, cells);
 
-	// --- biome regions: 6-8 centers scattered over the blob -----------------
-	const regionCount = rng.int(6, 8);
-	// guarantee all five biomes appear, then pad with random repeats
-	const regionBiomes: BiomeId[] = [...BIOME_IDS];
-	while (regionBiomes.length < regionCount) regionBiomes.push(rng.pick(BIOME_IDS));
-	// shuffle
-	for (let i = regionBiomes.length - 1; i > 0; i--) {
-		const j = rng.int(0, i);
-		[regionBiomes[i], regionBiomes[j]] = [regionBiomes[j], regionBiomes[i]];
-	}
-	const centers = regionBiomes.map((biome) => {
-		const [q, r] = rng.pick(cells);
-		return { q, r, biome };
-	});
-
-	const tiles: HexTile[] = cells.map(([q, r]) => {
-		const { x, z } = axialToWorld(q, r);
-		const hexSeed = hash2(q, r, seed);
-		const tileRng = makeRng(hexSeed);
-
-		// nearest two region centers (jittered distances so borders wobble)
+	// --- assign biomes via low-jitter Voronoi (big coherent clusters) -------
+	const assignments = new Map<string, { primary: RegionCenter; secondary?: RegionCenter }>();
+	for (const [q, r] of cells) {
+		const tileRng = makeRng(hash2(q, r, seed ^ 0x77));
 		const ranked = centers
-			.map((c) => ({
-				c,
-				d: axialDistance(q, r, c.q, c.r) + tileRng.range(-0.35, 0.35)
-			}))
+			.map((c) => ({ c, d: axialDistance(q, r, c.q, c.r) + tileRng.range(-0.15, 0.15) }))
 			.sort((a, b) => a.d - b.d);
 		const first = ranked[0];
 		const second = ranked.find((e) => e.c.biome !== first.c.biome);
+		assignments.set(key(q, r), {
+			primary: first.c,
+			secondary: second && second.d - first.d < 0.9 ? second.c : undefined
+		});
+	}
 
-		let biomes: HexTile['biomes'] = [first.c.biome];
-		let splitDir = tileRng.range(0, Math.PI * 2);
-		if (second && second.d - first.d < 1.2) {
-			biomes = [first.c.biome, second.c.biome];
-			const sw = axialToWorld(second.c.q, second.c.r);
+	// --- water must be ONE body: keep the largest connected RIVER component -
+	const isWater = (q: number, r: number) =>
+		assignments.get(key(q, r))?.primary.biome === 'RIVER';
+	const waterCells = cells.filter(([q, r]) => isWater(q, r));
+	const seen = new Set<string>();
+	const components: Array<Array<[number, number]>> = [];
+	for (const [q, r] of waterCells) {
+		if (seen.has(key(q, r))) continue;
+		const comp: Array<[number, number]> = [];
+		const queue: Array<[number, number]> = [[q, r]];
+		seen.add(key(q, r));
+		while (queue.length) {
+			const [cq, cr] = queue.pop()!;
+			comp.push([cq, cr]);
+			for (const [dq, dr] of AXIAL_DIRS) {
+				const nq = cq + dq;
+				const nr = cr + dr;
+				if (landSet.has(key(nq, nr)) && isWater(nq, nr) && !seen.has(key(nq, nr))) {
+					seen.add(key(nq, nr));
+					queue.push([nq, nr]);
+				}
+			}
+		}
+		components.push(comp);
+	}
+	components.sort((a, b) => b.length - a.length);
+	for (const comp of components.slice(1)) {
+		for (const [q, r] of comp) {
+			// reassign stray water to the nearest dry region
+			const dry = centers
+				.filter((c) => c.biome !== 'RIVER')
+				.sort(
+					(a, b) => axialDistance(q, r, a.q, a.r) - axialDistance(q, r, b.q, b.r)
+				)[0];
+			assignments.set(key(q, r), { primary: dry });
+		}
+	}
+
+	// --- land tiles ----------------------------------------------------------
+	const tiles: HexTile[] = cells.map(([q, r]) => {
+		const { x, z } = axialToWorld(q, r);
+		const hexSeed = hash2(q, r, seed);
+		const a = assignments.get(key(q, r))!;
+		const biomes: BiomeId[] =
+			a.secondary && a.secondary.biome !== a.primary.biome
+				? [a.primary.biome, a.secondary.biome]
+				: [a.primary.biome];
+		let splitDir = makeRng(hexSeed).range(0, Math.PI * 2);
+		if (a.secondary) {
+			const sw = axialToWorld(a.secondary.q, a.secondary.r);
 			splitDir = Math.atan2(sw.z - z, sw.x - x);
 		}
-
-		return { q, r, x, z, biomes, splitDir, seed: hexSeed };
+		return { q, r, x, z, kind: 'LAND' as const, biomes, splitDir, seed: hexSeed };
 	});
+
+	// --- the sea ring: >=5 hexes of open water around every land tile --------
+	const SEA_RING = 5;
+	const seaKeys = new Set<string>();
+	let frontier = cells;
+	for (let ring = 0; ring < SEA_RING; ring++) {
+		const next: Array<[number, number]> = [];
+		for (const [q, r] of frontier) {
+			for (const [dq, dr] of AXIAL_DIRS) {
+				const nq = q + dq;
+				const nr = r + dr;
+				const k = key(nq, nr);
+				if (!landSet.has(k) && !seaKeys.has(k)) {
+					seaKeys.add(k);
+					next.push([nq, nr]);
+				}
+			}
+		}
+		frontier = next;
+	}
+	for (const k of seaKeys) {
+		const [q, r] = k.split(',').map(Number);
+		const { x, z } = axialToWorld(q, r);
+		tiles.push({
+			q,
+			r,
+			x,
+			z,
+			kind: 'SEA',
+			biomes: [],
+			splitDir: 0,
+			seed: hash2(q, r, seed ^ 0x5ea)
+		});
+	}
 
 	return { seed, tiles };
 }

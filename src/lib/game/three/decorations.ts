@@ -13,7 +13,7 @@ function clay(color: string | THREE.Color): THREE.MeshStandardMaterial {
 		color,
 		roughness: 0.92,
 		metalness: 0,
-		flatShading: true
+		flatShading: false
 	});
 }
 
@@ -36,7 +36,7 @@ export function pine(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
 	const s = rng.range(0.75, 1.25);
 	const trunk = shadow(
-		new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.22, 6), clay(jitterColor(rng, TRUNK)))
+		new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.22, 8), clay(jitterColor(rng, TRUNK)))
 	);
 	trunk.position.y = 0.11;
 	g.add(trunk);
@@ -45,7 +45,7 @@ export function pine(rng: Rng): THREE.Group {
 	for (let i = 0; i < tiers; i++) {
 		const radius = 0.3 - i * 0.075;
 		const cone = shadow(
-			new THREE.Mesh(new THREE.ConeGeometry(radius, 0.34, 7), clay(green.clone().offsetHSL(0, 0, i * 0.03)))
+			new THREE.Mesh(new THREE.ConeGeometry(radius, 0.34, 10), clay(green.clone().offsetHSL(0, 0, i * 0.03)))
 		);
 		cone.position.y = 0.3 + i * 0.22;
 		g.add(cone);
@@ -59,12 +59,12 @@ export function blobTree(rng: Rng, color = '#7fbf77'): THREE.Group {
 	const g = new THREE.Group();
 	const s = rng.range(0.7, 1.2);
 	const trunk = shadow(
-		new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.075, 0.3, 6), clay(jitterColor(rng, TRUNK)))
+		new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.075, 0.3, 8), clay(jitterColor(rng, TRUNK)))
 	);
 	trunk.position.y = 0.15;
 	g.add(trunk);
 	const crown = shadow(
-		new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 0), clay(jitterColor(rng, color)))
+		new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 1), clay(jitterColor(rng, color)))
 	);
 	crown.position.y = 0.5;
 	crown.scale.set(1, rng.range(0.85, 1.1), 1);
@@ -72,7 +72,7 @@ export function blobTree(rng: Rng, color = '#7fbf77'): THREE.Group {
 	g.add(crown);
 	if (rng.chance(0.4)) {
 		const side = shadow(
-			new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 0), clay(jitterColor(rng, color)))
+			new THREE.Mesh(new THREE.IcosahedronGeometry(0.18, 1), clay(jitterColor(rng, color)))
 		);
 		const a = rng.range(0, Math.PI * 2);
 		side.position.set(Math.cos(a) * 0.22, 0.38, Math.sin(a) * 0.22);
@@ -94,7 +94,7 @@ export function rock(rng: Rng, scale = 1): THREE.Group {
 	for (let i = 0; i < n; i++) {
 		const r = shadow(
 			new THREE.Mesh(
-				new THREE.DodecahedronGeometry(rng.range(0.12, 0.24) * scale, 0),
+				new THREE.DodecahedronGeometry(rng.range(0.12, 0.24) * scale, 1),
 				clay(jitterColor(rng, '#a8a094', 0.005, 0.02, 0.06))
 			)
 		);
@@ -111,7 +111,7 @@ export function peak(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
 	const main = shadow(
 		new THREE.Mesh(
-			new THREE.ConeGeometry(rng.range(0.34, 0.46), rng.range(0.7, 1.05), 5),
+			new THREE.ConeGeometry(rng.range(0.34, 0.46), rng.range(0.7, 1.05), 8),
 			clay(jitterColor(rng, '#989184', 0.004, 0.02, 0.05))
 		)
 	);
@@ -121,7 +121,7 @@ export function peak(rng: Rng): THREE.Group {
 	if (rng.chance(0.7)) {
 		const side = shadow(
 			new THREE.Mesh(
-				new THREE.ConeGeometry(rng.range(0.2, 0.3), rng.range(0.4, 0.6), 5),
+				new THREE.ConeGeometry(rng.range(0.2, 0.3), rng.range(0.4, 0.6), 8),
 				clay(jitterColor(rng, '#a49c8f', 0.004, 0.02, 0.05))
 			)
 		);
@@ -140,7 +140,7 @@ export function tuft(rng: Rng): THREE.Group {
 	const green = jitterColor(rng, '#9ccc70', 0.02, 0.1, 0.06);
 	for (let i = 0; i < n; i++) {
 		const blade = shadow(
-			new THREE.Mesh(new THREE.ConeGeometry(0.035, rng.range(0.1, 0.18), 5), clay(green))
+			new THREE.Mesh(new THREE.ConeGeometry(0.035, rng.range(0.1, 0.18), 7), clay(green))
 		);
 		blade.position.set(rng.jitter(0, 0.07), 0.06, rng.jitter(0, 0.07));
 		blade.rotation.z = rng.jitter(0, 0.25);
@@ -154,7 +154,7 @@ export function flower(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
 	const head = shadow(
 		new THREE.Mesh(
-			new THREE.IcosahedronGeometry(0.045, 0),
+			new THREE.IcosahedronGeometry(0.045, 1),
 			clay(rng.pick(['#f2b8c6', '#f5d76e', '#ffffff', '#f09a8b']))
 		)
 	);
@@ -170,7 +170,7 @@ export function pebble(rng: Rng): THREE.Group {
 	const g = new THREE.Group();
 	const p = shadow(
 		new THREE.Mesh(
-			new THREE.IcosahedronGeometry(rng.range(0.05, 0.1), 0),
+			new THREE.IcosahedronGeometry(rng.range(0.05, 0.1), 1),
 			clay(jitterColor(rng, '#b9b2a6', 0.004, 0.02, 0.06))
 		)
 	);

@@ -1,23 +1,31 @@
 /**
  * Turns HexWorld data into a clay Three.js island.
  *
- * Each hex = a cream clay base prism + a thin colored cap slab (the biome
- * surface), both extruded with bevels for the soft clay edge. Two-biome
- * hexes get a vertex-colored cap split along the tile's splitDir, and their
- * decorations are placed on the matching side of the line.
+ * The board is FLAT and reads as ONE CONTINUOUS LANDSCAPE: every tile's top
+ * is a finely tessellated disc whose vertex colors come from a smooth
+ * CROSS-TILE COLOR FIELD — each vertex blends its own tile's biome color
+ * with the neighbouring tiles' colors (inverse-distance weighting), so
+ * terrain melts across hex borders instead of stopping at them. Water
+ * contributes "wetness" to the same field, and a sandy shore band emerges
+ * automatically wherever wetness crosses ~50% — shorelines flow around the
+ * lake and along the entire coast, ignoring tile boundaries.
  */
 import * as THREE from 'three';
-import type { BiomeId, HexTile, HexWorld } from '../hexmap';
+import { AXIAL_DIRS, key, type BiomeId, type HexTile, type HexWorld } from '../hexmap';
 import { makeRng, type Rng } from '../rng';
 import { blobTree, cactus, flower, pebble, peak, pine, puffTree, rock, tuft } from './decorations';
 
-const HEX_RADIUS = 0.96; // < 1 so grooves show between tiles
-const CAP_DEPTH = 0.1;
+const HEX_RADIUS = 0.995; // near-seamless — tiles read as continuous ground
+const HEX_HEIGHT = 0.5; // uniform — the board is flat
+const SEA_HEIGHT = 0.38; // sea sits a step lower
+const BEVEL = 0.055; // soft clay edge, thin seam
 const CLAY_SIDE = '#f5edda';
+const SEA_SIDE = '#c9dfda'; // sea prisms blend with the water, no hard grid
+const SHORE = '#ecdcae';
+const SEA_TOP = '#7ec4d2';
 
 interface BiomeSpec {
 	top: string;
-	height: number;
 	/** decorations per full hex (halved on split hexes) */
 	density: [number, number];
 	deco: (rng: Rng) => THREE.Group;
@@ -26,31 +34,26 @@ interface BiomeSpec {
 const BIOMES: Record<BiomeId, BiomeSpec> = {
 	MEADOW: {
 		top: '#9fd67f',
-		height: 0.52,
 		density: [3, 7],
 		deco: (rng) => (rng.chance(0.2) ? flower(rng) : rng.chance(0.12) ? blobTree(rng) : tuft(rng))
 	},
 	FOREST: {
 		top: '#77bd62',
-		height: 0.58,
 		density: [4, 8],
 		deco: (rng) => (rng.chance(0.55) ? pine(rng) : blobTree(rng))
 	},
 	MOUNTAIN: {
 		top: '#b3ac9f',
-		height: 0.8,
 		density: [1, 2],
 		deco: (rng) => (rng.chance(0.7) ? peak(rng) : rock(rng, 1.4))
 	},
 	DUNES: {
 		top: '#f0d99e',
-		height: 0.48,
 		density: [1, 3],
 		deco: (rng) => (rng.chance(0.45) ? puffTree(rng) : rng.chance(0.5) ? cactus(rng) : pebble(rng))
 	},
 	RIVER: {
 		top: '#54c6dc',
-		height: 0.3,
 		density: [0, 2],
 		deco: (rng) => pebble(rng)
 	}
@@ -69,72 +72,194 @@ function hexShape(radius: number): THREE.Shape {
 	return shape;
 }
 
-/** Extruded hex, rotated so extrusion depth becomes +Y. */
-function hexGeometry(radius: number, depth: number, bevel: number): THREE.ExtrudeGeometry {
-	const geo = new THREE.ExtrudeGeometry(hexShape(radius - bevel), {
-		depth: depth - bevel,
+/** Rounded clay prism — extruded hex with multi-segment bevel, depth -> +Y. */
+function hexPrism(radius: number, height: number): THREE.ExtrudeGeometry {
+	const geo = new THREE.ExtrudeGeometry(hexShape(radius - BEVEL), {
+		depth: height - BEVEL,
 		bevelEnabled: true,
-		bevelThickness: bevel,
-		bevelSize: bevel,
-		bevelSegments: 1
+		bevelThickness: BEVEL,
+		bevelSize: BEVEL,
+		bevelSegments: 3
 	});
 	geo.rotateX(-Math.PI / 2);
 	return geo;
 }
 
-/** Per-hex tiny hue drift so a field of same-biome hexes still shimmers. */
+/** Per-hex tiny hue drift — subtle, so neighbouring tiles stay continuous. */
 function driftedColor(hex: string, rng: Rng): THREE.Color {
 	const c = new THREE.Color(hex);
-	c.offsetHSL(rng.jitter(0, 0.008), rng.jitter(0, 0.03), rng.jitter(0, 0.025));
+	c.offsetHSL(rng.jitter(0, 0.004), rng.jitter(0, 0.015), rng.jitter(0, 0.01));
 	return c;
 }
 
-function buildCap(tile: HexTile, rng: Rng, baseHeight: number): THREE.Mesh {
-	const geo = hexGeometry(HEX_RADIUS, CAP_DEPTH, 0.045);
-	const colorA = driftedColor(BIOMES[tile.biomes[0]].top, rng);
-	const colorB = tile.biomes[1] ? driftedColor(BIOMES[tile.biomes[1]].top, rng) : colorA;
+const smoothstep = (e0: number, e1: number, x: number): number => {
+	const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+	return t * t * (3 - 2 * t);
+};
 
-	const pos = geo.getAttribute('position');
-	const colors = new Float32Array(pos.count * 3);
-	const dirX = Math.cos(tile.splitDir);
-	const dirZ = Math.sin(tile.splitDir);
-	for (let i = 0; i < pos.count; i++) {
-		// side test in local hex space: secondary biome owns the +dir half
-		const side = pos.getX(i) * dirX + pos.getZ(i) * dirZ;
-		const c = side > 0 ? colorB : colorA;
-		colors[i * 3] = c.r;
-		colors[i * 3 + 1] = c.g;
-		colors[i * 3 + 2] = c.b;
+/* ---------------------------------------------------------------------------
+ * The cross-tile color field
+ * ------------------------------------------------------------------------ */
+
+interface TileStyle {
+	tile: HexTile;
+	colorA: THREE.Color;
+	colorB: THREE.Color;
+	waterA: number;
+	waterB: number;
+	dirX: number;
+	dirZ: number;
+}
+
+/** Sample a single tile's intra-tile blend at a world position. */
+function sampleTile(s: TileStyle, wx: number, wz: number, out: THREE.Color): number {
+	const lx = wx - s.tile.x;
+	const lz = wz - s.tile.z;
+	const t = smoothstep(-0.38, 0.38, lx * s.dirX + lz * s.dirZ);
+	out.copy(s.colorA).lerp(s.colorB, t);
+	return s.waterA + (s.waterB - s.waterA) * t;
+}
+
+function buildStyles(world: HexWorld): Map<string, TileStyle> {
+	const styles = new Map<string, TileStyle>();
+	for (const tile of world.tiles) {
+		const rng = makeRng(tile.seed ^ 0xc01);
+		if (tile.kind === 'SEA') {
+			const c = driftedColor(SEA_TOP, rng);
+			styles.set(key(tile.q, tile.r), {
+				tile,
+				colorA: c,
+				colorB: c,
+				waterA: 1,
+				waterB: 1,
+				dirX: 1,
+				dirZ: 0
+			});
+			continue;
+		}
+		const a = tile.biomes[0];
+		const b = tile.biomes[1] ?? a;
+		styles.set(key(tile.q, tile.r), {
+			tile,
+			colorA: driftedColor(BIOMES[a].top, rng),
+			colorB: driftedColor(BIOMES[b].top, rng),
+			waterA: a === 'RIVER' ? 1 : 0,
+			waterB: b === 'RIVER' ? 1 : 0,
+			dirX: Math.cos(tile.splitDir),
+			dirZ: Math.sin(tile.splitDir)
+		});
 	}
-	geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+	return styles;
+}
 
-	const isWater = tile.biomes.includes('RIVER');
+/**
+ * Field color at a world position: inverse-distance blend of this tile and
+ * its 6 neighbours. At a border midpoint the two tiles weigh 50/50 —
+ * perfectly continuous terrain. Wetness rides the same blend; the sandy
+ * shore appears wherever it passes through ~0.5.
+ */
+function makeFieldSampler(styles: Map<string, TileStyle>, shoreColor: THREE.Color) {
+	const scratch = new THREE.Color();
+	return (tile: HexTile, wx: number, wz: number, out: THREE.Color): void => {
+		let sumW = 0;
+		let water = 0;
+		out.setRGB(0, 0, 0);
+		const consider = (s: TileStyle | undefined): void => {
+			if (!s) return;
+			const dx = wx - s.tile.x;
+			const dz = wz - s.tile.z;
+			const d = Math.sqrt(dx * dx + dz * dz);
+			const w = 1 / Math.pow(d + 0.12, 3);
+			const wet = sampleTile(s, wx, wz, scratch);
+			out.r += scratch.r * w;
+			out.g += scratch.g * w;
+			out.b += scratch.b * w;
+			water += wet * w;
+			sumW += w;
+		};
+		consider(styles.get(key(tile.q, tile.r)));
+		for (const [dq, dr] of AXIAL_DIRS) consider(styles.get(key(tile.q + dq, tile.r + dr)));
+		out.multiplyScalar(1 / sumW);
+		water /= sumW;
+
+		// the shore: a soft sandy band where land turns to water
+		const shoreW = Math.exp(-(((water - 0.5) / 0.16) ** 2));
+		out.lerp(shoreColor, shoreW * 0.85);
+	};
+}
+
+/* ---------------------------------------------------------------------------
+ * Meshes
+ * ------------------------------------------------------------------------ */
+
+type FieldSampler = ReturnType<typeof makeFieldSampler>;
+
+/** Finely tessellated top disc, vertex-colored by the cross-tile field. */
+function buildTopDisc(tile: HexTile, rng: Rng, field: FieldSampler): THREE.Mesh {
+	const radius = HEX_RADIUS - BEVEL * 0.55;
+	const N = 8; // subdivisions per sector edge
+	const positions: number[] = [];
+	const colors: number[] = [];
+	const scratch = new THREE.Color();
+
+	const corner = (i: number): [number, number] => [
+		Math.cos((Math.PI / 3) * i) * radius,
+		Math.sin((Math.PI / 3) * i) * radius
+	];
+
+	const pushTri = (a: [number, number], b: [number, number], c: [number, number]): void => {
+		// per-triangle micro lightness jitter: the hand-glazed clay patchiness
+		const dl = rng.jitter(0, 0.004);
+		// counter-clockwise in xz so normals face +Y
+		for (const [px, pz] of [a, c, b]) {
+			positions.push(px, 0, pz);
+			field(tile, tile.x + px, tile.z + pz, scratch);
+			scratch.offsetHSL(0, 0, dl);
+			colors.push(scratch.r, scratch.g, scratch.b);
+		}
+	};
+
+	for (let s = 0; s < 6; s++) {
+		const A = corner(s);
+		const B = corner((s + 1) % 6);
+		const point = (i: number, j: number): [number, number] => {
+			const u = i / N;
+			const v = i === 0 ? 0 : j / i;
+			return [u * (A[0] + v * (B[0] - A[0])), u * (A[1] + v * (B[1] - A[1]))];
+		};
+		for (let i = 0; i < N; i++) {
+			for (let j = 0; j <= i; j++) {
+				pushTri(point(i, j), point(i + 1, j), point(i + 1, j + 1));
+				if (j < i) pushTri(point(i, j), point(i + 1, j + 1), point(i, j + 1));
+			}
+		}
+	}
+
+	const geo = new THREE.BufferGeometry();
+	geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+	geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+	geo.computeVertexNormals();
+
+	const isWet = tile.kind === 'SEA' || tile.biomes.includes('RIVER');
 	const mesh = new THREE.Mesh(
 		geo,
 		new THREE.MeshStandardMaterial({
 			vertexColors: true,
-			roughness: isWater ? 0.35 : 0.9,
-			metalness: 0,
-			flatShading: false
+			roughness: isWet ? 0.5 : 0.88,
+			metalness: 0
 		})
 	);
-	mesh.position.y = baseHeight;
-	mesh.castShadow = true;
+	mesh.position.y = (tile.kind === 'SEA' ? SEA_HEIGHT : HEX_HEIGHT) + 0.004;
 	mesh.receiveShadow = true;
 	return mesh;
 }
 
-function placeDecorations(
-	tile: HexTile,
-	rng: Rng,
-	topY: number,
-	group: THREE.Group
-): void {
+function placeDecorations(tile: HexTile, rng: Rng, group: THREE.Group): void {
 	const halves: Array<{ biome: BiomeId; sign: -1 | 1 | 0 }> =
 		tile.biomes.length === 2
 			? [
 					{ biome: tile.biomes[0], sign: -1 },
-					{ biome: tile.biomes[1]!, sign: 1 }
+					{ biome: tile.biomes[1], sign: 1 }
 				]
 			: [{ biome: tile.biomes[0], sign: 0 }];
 
@@ -145,24 +270,25 @@ function placeDecorations(
 		const spec = BIOMES[half.biome];
 		let count = rng.int(spec.density[0], spec.density[1]);
 		if (tile.biomes.length === 2) count = Math.max(1, Math.round(count / 2));
-		if (half.biome === 'RIVER') count = rng.int(spec.density[0], spec.density[1]);
 
 		for (let i = 0; i < count; i++) {
-			// rejection-sample a point in the hex, on the correct side
 			let px = 0;
 			let pz = 0;
 			let ok = false;
 			for (let tries = 0; tries < 14 && !ok; tries++) {
 				const a = rng.range(0, Math.PI * 2);
-				const d = Math.sqrt(rng.next()) * HEX_RADIUS * 0.68;
+				const d = Math.sqrt(rng.next()) * HEX_RADIUS * 0.66;
 				px = Math.cos(a) * d;
 				pz = Math.sin(a) * d;
 				const side = px * dirX + pz * dirZ;
-				ok = half.sign === 0 || (half.sign === 1 ? side > 0.12 : side < -0.12);
+				// keep decorations clear of the transition band
+				ok = half.sign === 0 || (half.sign === 1 ? side > 0.3 : side < -0.3);
 			}
 			if (!ok) continue;
 			const deco = spec.deco(rng);
-			deco.position.set(tile.x + px, topY, tile.z + pz);
+			// half-size furniture: the hexagon itself reads larger
+			deco.scale.multiplyScalar(0.5);
+			deco.position.set(tile.x + px, HEX_HEIGHT, tile.z + pz);
 			group.add(deco);
 		}
 	}
@@ -170,34 +296,38 @@ function placeDecorations(
 
 export function buildWorld(world: HexWorld): THREE.Group {
 	const group = new THREE.Group();
+	const styles = buildStyles(world);
+	const shore = new THREE.Color(SHORE);
+	const field = makeFieldSampler(styles, shore);
 
 	for (const tile of world.tiles) {
 		const rng = makeRng(tile.seed);
+		const isSea = tile.kind === 'SEA';
 
-		// base height: dominant biome, softened toward secondary
-		const hA = BIOMES[tile.biomes[0]].height;
-		const hB = tile.biomes[1] ? BIOMES[tile.biomes[1]].height : hA;
-		const height = (hA + hB) / 2 + rng.jitter(0, 0.02);
+		const tileGroup = new THREE.Group();
+		// sea is scenery — only land tiles are selectable
+		if (!isSea) tileGroup.userData.tile = tile;
 
 		const base = new THREE.Mesh(
-			hexGeometry(HEX_RADIUS, height, 0.05),
+			hexPrism(HEX_RADIUS, isSea ? SEA_HEIGHT : HEX_HEIGHT),
 			new THREE.MeshStandardMaterial({
-				color: driftedColor(CLAY_SIDE, rng),
+				color: driftedColor(isSea ? SEA_SIDE : CLAY_SIDE, rng),
 				roughness: 0.95,
 				metalness: 0
 			})
 		);
 		base.position.set(tile.x, 0, tile.z);
-		base.castShadow = true;
+		base.castShadow = !isSea;
 		base.receiveShadow = true;
-		group.add(base);
+		tileGroup.add(base);
 
-		const cap = buildCap(tile, rng, height);
-		cap.position.x = tile.x;
-		cap.position.z = tile.z;
-		group.add(cap);
+		const disc = buildTopDisc(tile, rng, field);
+		disc.position.x = tile.x;
+		disc.position.z = tile.z;
+		tileGroup.add(disc);
 
-		placeDecorations(tile, rng, height + CAP_DEPTH, group);
+		if (!isSea) placeDecorations(tile, rng, tileGroup);
+		group.add(tileGroup);
 	}
 
 	return group;
